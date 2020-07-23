@@ -4,18 +4,56 @@
 #include "Terminal.h"
 #include "Arduino.h"
 
-
-// Serial buffer and message
-// template <typename ProgramVars>
-// typename Terminal<ProgramVars>::String serialBuffer = "";
-// template <typename ProgramVars>
-// typename Terminal<ProgramVars>::String messages = "";
-
+/**
+ * Constructor
+ */
 template <typename ProgramVars>
-Terminal<ProgramVars>::Terminal() {}
+Terminal<ProgramVars>::Terminal(Stream & Serial): _Serial (Serial) {}
 
+/**
+ * Deconstructor
+ */
 template <typename ProgramVars>
 Terminal<ProgramVars>::~Terminal() {};
+
+// template <typename ProgramVars>
+// Terminal<ProgramVars>::HardwareSerial TerminalSerial(0);
+
+/**
+ * The 'setup' function
+ *  NOOP for now. Not working as expected
+ */
+template <typename ProgramVars>
+void Terminal<ProgramVars>::setup(void) {
+}
+
+
+/**
+ * Get messages from serial, process commands, and print results
+ * ERROR: This is not working in main.cpp as expected
+ */
+template <typename ProgramVars>
+void Terminal<ProgramVars>::readSerialAndProcessCommands(ProgramVars *progVars){
+        // While there are characters in the Serial buffer
+    // read them in one at a time into sBuffer
+    // We need to go via char probably due to implicit type conversions
+    while(_Serial.available() > 0){
+      char inChar = _Serial.read();
+      serialBuffer += inChar;
+    }
+
+    // If the buffers end in newline, try to parse the command an arguments
+    if(serialBuffer.endsWith("\n")) {
+      // Print out the buffer - for fun
+      _Serial.println(serialBuffer);
+      // Process the commands
+    //   processCommands(serialBuffer, &progVars, &messages);
+      // Print the message
+      _Serial.println(messages);
+      // Reset the buffer to empty
+      serialBuffer = "";
+    }
+}
 
 /** This function takes a string and separates out the command and argument
  * The command is the first character, the argument is the remainder
@@ -109,7 +147,10 @@ typename Terminal<ProgramVars>::CommandAndArguments Terminal<ProgramVars>::parse
     };
 }
 
-
+/**
+ * This is an attempt to make a generic function for all Integer types. 
+ * It failed.... does not work...
+ */
 template <typename ProgramVars>
 template <typename Z>
 boolean Terminal<ProgramVars>::argDisplayOrSetGenericInteger(String argName, Terminal<ProgramVars>::CommandAndArguments comAndArg, Z *var, String *message) {
@@ -124,7 +165,9 @@ boolean Terminal<ProgramVars>::argDisplayOrSetGenericInteger(String argName, Ter
     }
     return false;
 }
-
+/**
+ * I thought you _should_ be able to do the following, you cant
+ */
 // template <typename ProgramVars>
 // boolean Terminal<ProgramVars>::argDisplayOrSetUint8(String argName, Terminal<ProgramVars>::CommandAndArguments comAndArg, uint8_t *var, String *message) {
 //     return argDisplayOrSetGenericInteger<uint8_t>(argName, comAndArg, *var, *message);

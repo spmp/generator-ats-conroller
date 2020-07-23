@@ -5,12 +5,28 @@
 
 /** Default variable settings **/
 // IO
-#define RUN_STOP_INPUT_PIN 0
-#define RUN_INDICATOR_INPUT_PIN 1
-#define TEMPERATURE_INPUT_PIN 3
-// #
+#define INPUT_PIN_RUN_STOP                  A0
+#define INPUT_PIN_RUN_INDICATOR             A1
+#define INPUT_PIN_ANALOG_TEMPERATURE        A2
+#define INPUT_PIN_ANALOG_FUEL_LEVEL         A3
+#define OUTPUT_GENERATOR_STARTER_CONTACTOR  5
+#define OUTPUT_GENERATOR_OUTPUT_ENABLED     6
+#define OUTPUT_INDICATOR_ERROR              7
+#define OUTPUT_INDICATOR_WARNING            8
+#define OUTPUT_INDICATOR_TEMPERATURE        9
+#define OUTPUT_INDICATOR_FUEL               10
+// 8 bit error register
+
+#define WARNING_TEMPERATURE                 0
+#define WARNING_FUEL                        1
+#define ERROR_GENERATOR_START               2
+#define ERROR_GENERATOR_STOP                3
+#define ERROR_TEMPERATURE                   4
+#define ERROR_FUEL                          5
+#define WARNING_THRESHOLD                   3 // If error reg over this is warning
+
 // Program state varse
-#define LOGGING_ENABLED_DEFAULT 1
+#define LOGGING_ENABLED_DEFAULT             1
 
 // This variables are 'volatile' as it changes in an ISR
 volatile uint32_t timestamp = 0;
@@ -83,6 +99,8 @@ struct ProgramVars {
   bool stateChange;
   // is logging enabled
   bool loggingEnabled;                               // L
+  bool readInputs;                                    // I
+  bool setOutputs;                                    // H
   // Generator state vars
   bool generatorRunning;                             // r
   bool generatorOn;                                  // o
@@ -117,7 +135,10 @@ struct ProgramVars {
 };
 // Insantiate an empty version
 ProgramVars programVars = {
+  0, // stateChange
   LOGGING_ENABLED_DEFAULT,	// loggingEnabled
+  0, // readInputs
+  0, // setOutputs
   // Generator state vars
   0,	// generatorRunning
   0,	// generatorOn
@@ -156,7 +177,7 @@ ProgramVars programVars = {
  */
 class CatFrogTerminal: Terminal<ProgramVars>{
   public:
-    CatFrogTerminal(): Terminal()
+    CatFrogTerminal(Stream & Serial): Terminal(Serial)
     {
     }
 
@@ -169,7 +190,7 @@ class CatFrogTerminal: Terminal<ProgramVars>{
 
       // Exit with message if no command
       if (comArgState.parseState == EXIT_FAILURE) {
-        *message = "Input string is not a valid command/argument";
+        *message = F("Input string is not a valid command/argument");
         return EXIT_FAILURE;
       }
 
@@ -178,43 +199,39 @@ class CatFrogTerminal: Terminal<ProgramVars>{
       {
       case 'h':
         progVars->stateChange = false;
-  //       *message = String("Help: \n") + 
+        *message = String("Help: See source code, Strings too large for Arduino");
+  //      *message = String(F("Help: \n")) + 
   //         String(F("'L': loggingEnabled\n")) +
   // // Generator state vars
-  //         String("'r': generatorRunning\n") +
-  //         String("'o': generatorOn\n");
-        *message = String(F("Help: \n")) + 
-          String(F("'L': loggingEnabled\n")) +
-  // Generator state vars
-          String(F("'r': generatorRunning\n")) +
-          String(F("'o': generatorOn\n")) +
-  // Error and warning is bitwise
-          String(F("'w': generatorWarning\n")) +
-          String(F("'e': generatorError\n")) +
-  // Generator start vars
-          String(F("'S': maxRetries\n")) +
-          String(F("'s': numRetries\n")) +
-          String(F("'C': starterContactorTimeSeconds\n")) +
-          String(F("'c': starterContactorTimeSecondsCurrent\n")) +
-          String(F("'V': startToOnTimeSeconds\n")) +
-          String(F("'v': startToOnTimeSecondsCurrent\n")) +
-  // Environmental conditions
-          String(F("'T': checkLevelTemperatureMax\n")) +
-          String(F("'t': checkLevelTemperatureWarning\n")) +
-          String(F("'F': checkLevelFuelLevelMin\n")) +
-          String(F("'f': checkLevelFuelLevelWarning\n")) +
-  // Inputs
-          String(F("'R': inputRunStop\n")) +
-          String(F("'i': inpputRunIndicator\n")) +
-          String(F("'y': inputTemperature\n")) +
-          String(F("'u': inputFuelLevel\n")) +
-  // Outputs
-          String(F("'b': outputGeneratorStarterContactor\n")) +
-          String(F("'n': outputGeneratorOutputEnable\n")) +
-          String(F("'m': outputIndicatorWarning\n")) +
-          String(F("',': outputIndicatorError\n")) +
-          String(F("'.': outputIndicatorTemperature\n")) +
-          String(F("'/': outputIndicatorFuelLevel\n"));
+  //         String(F("'r': generatorRunning\n")) +
+  //         String(F("'o': generatorOn\n")) +
+  // // Error and warning is bitwise
+  //         String(F("'w': generatorWarning\n")) +
+  //         String(F("'e': generatorError\n")) +
+  // // Generator start vars
+  //         String(F("'S': maxRetries\n")) +
+  //         String(F("'s': numRetries\n")) +
+  //         String(F("'C': starterContactorTimeSeconds\n")) +
+  //         String(F("'c': starterContactorTimeSecondsCurrent\n")) +
+  //         String(F("'V': startToOnTimeSeconds\n")) +
+  //         String(F("'v': startToOnTimeSecondsCurrent\n")) +
+  // // Environmental conditions
+  //         String(F("'T': checkLevelTemperatureMax\n")) +
+  //         String(F("'t': checkLevelTemperatureWarning\n")) +
+  //         String(F("'F': checkLevelFuelLevelMin\n")) +
+  //         String(F("'f': checkLevelFuelLevelWarning\n")) +
+  // // Inputs
+  //         String(F("'R': inputRunStop\n")) +
+  //         String(F("'i': inpputRunIndicator\n")) +
+  //         String(F("'y': inputTemperature\n")) +
+  //         String(F("'u': inputFuelLevel\n")) +
+  // // Outputs
+  //         String(F("'b': outputGeneratorStarterContactor\n")) +
+  //         String(F("'n': outputGeneratorOutputEnable\n")) +
+  //         String(F("'m': outputIndicatorWarning\n")) +
+  //         String(F("',': outputIndicatorError\n")) +
+  //         String(F("'.': outputIndicatorTemperature\n")) +
+  //         String(F("'/': outputIndicatorFuelLevel\n"));
         break;
       case 'L':
         progVars->stateChange = argDisplayOrSetBoolean("loggingEnabled", comArgState, &progVars->loggingEnabled, message);
@@ -309,43 +326,93 @@ class CatFrogTerminal: Terminal<ProgramVars>{
 
       String formatProgVars(long time, ProgramVars progVars) {
         return String(timestamp) +
-          F(" loggingEnabled: ") + String(progVars.loggingEnabled) +
+          // F(" loggingEnabled: ") + 
+            String(strSep) +
+            String(progVars.loggingEnabled) +
         // Generator state vars
-          F(" generatorRunning: ") + String(progVars.generatorRunning) +
-          F(" generatorOn: ") + String(progVars.generatorOn) +
+          // F(" generatorRunning: ") + 
+            String(strSep) +
+            String(progVars.generatorRunning) +
+          // F(" generatorOn: ") + 
+            String(strSep) +
+            String(progVars.generatorOn) +
         // Error and warning is bitwise
         // start | stop | temperature | fuel | 4 | 5 | 6| 7
-          F(" generatorWarning: ") + String(progVars.generatorWarning) +
-          F(" generatorError: ") + String(progVars.generatorError) +
+          // F(" generatorWarning: ") + 
+            String(strSep) +
+            String(progVars.generatorWarning) +
+          // F(" generatorError: ") + 
+            String(strSep) +
+            String(progVars.generatorError) +
         // Generator start vars
-          F(" maxRetries: ") + String(progVars.maxRetries) +
-          F(" numRetries: ") + String(progVars.numRetries) +
-          F(" starterContactorTimeSeconds: ") + String(progVars.starterContactorTimeSeconds) +
-          F(" starterContactorTimeSecondsCurrent: ") + String(progVars.starterContactorTimeSecondsCurrent) +
-          F(" startToOnTimeSeconds: ") + String(progVars.startToOnTimeSeconds) +
-          F(" startToOnTimeSecondsCurrent: ") + String(progVars.startToOnTimeSecondsCurrent) +
+          // F(" maxRetries: ") + 
+            String(strSep) +
+            String(progVars.maxRetries) +
+          // F(" numRetries: ") + 
+            String(strSep) +
+           String(progVars.numRetries) +
+          // F(" starterContactorTimeSeconds: ") + 
+            String(strSep) +
+           String(progVars.starterContactorTimeSeconds) +
+          // F(" starterContactorTimeSecondsCurrent: ") + 
+            String(strSep) +
+           String(progVars.starterContactorTimeSecondsCurrent) +
+          // F(" startToOnTimeSeconds: ") + 
+            String(strSep) +
+           String(progVars.startToOnTimeSeconds) +
+          // F(" startToOnTimeSecondsCurrent: ") + 
+            String(strSep) +
+            String(progVars.startToOnTimeSecondsCurrent) +
         // Environmental conditions
-          F(" checkLevelTemperatureMax: ") + String(progVars.checkLevelTemperatureMax) +
-          F(" checkLevelTemperatureWarning: ") + String(progVars.checkLevelTemperatureWarning) +
-          F(" checkLevelFuelLevelMin: ") + String(progVars.checkLevelFuelLevelMin) +
-          F(" checkLevelFuelLevelWarning: ") + String(progVars.checkLevelFuelLevelWarning) +
+          // F(" checkLevelTemperatureMax: ") + 
+            String(strSep) +
+            String(progVars.checkLevelTemperatureMax) +
+          // F(" checkLevelTemperatureWarning: ") + 
+            String(strSep) +
+            String(progVars.checkLevelTemperatureWarning) +
+          // F(" checkLevelFuelLevelMin: ") + 
+            String(strSep) +
+            String(progVars.checkLevelFuelLevelMin) +
+          // F(" checkLevelFuelLevelWarning: ") + 
+            String(strSep) +
+            String(progVars.checkLevelFuelLevelWarning) +
         // Inputs
-          F(" inputRunStop: ") + String(progVars.inputRunStop) +
-          F(" inpputRunIndicator: ") + String(progVars.inpputRunIndicator) +
-          F(" inputTemperature: ") + String(progVars.inputTemperature) +
-          F(" inputFuelLevel: ") + String(progVars.inputFuelLevel) +
+          // F(" inputRunStop: ") + 
+            String(strSep) +
+            String(progVars.inputRunStop) +
+          // F(" inpputRunIndicator: ") + 
+            String(strSep) +
+            String(progVars.inpputRunIndicator) +
+          // F(" inputTemperature: ") + 
+            String(strSep) +
+            String(progVars.inputTemperature) +
+          // F(" inputFuelLevel: ") + 
+            String(strSep) +
+            String(progVars.inputFuelLevel) +
         // Outputs
-          F(" outputGeneratorStarterContactor: ") + String(progVars.outputGeneratorStarterContactor) +
-          F(" outputGeneratorOutputEnable: ") + String(progVars.outputGeneratorOutputEnable) +
-          F(" outputIndicatorWarning: ") + String(progVars.outputIndicatorWarning) +
-          F(" outputIndicatorError: ") + String(progVars.outputIndicatorError) +
-          F(" outputIndicatorTemperature: ") + String(progVars.outputIndicatorTemperature) +
-          F(" outputIndicatorFuelLevel: ") + String(progVars.outputIndicatorFuelLevel);
+          // F(" outputGeneratorStarterContactor: ") + 
+            String(strSep) +
+            String(progVars.outputGeneratorStarterContactor) +
+          // F(" outputGeneratorOutputEnable: ") + 
+            String(strSep) +
+            String(progVars.outputGeneratorOutputEnable) +
+          // F(" outputIndicatorWarning: ") + 
+            String(strSep) +
+            String(progVars.outputIndicatorWarning) +
+          // F(" outputIndicatorError: ") + 
+            String(strSep) +
+            String(progVars.outputIndicatorError) +
+          // F(" outputIndicatorTemperature: ") + 
+            String(strSep) +
+            String(progVars.outputIndicatorTemperature) +
+          // F(" outputIndicatorFuelLevel: ") + 
+            String(strSep) +
+            String(progVars.outputIndicatorFuelLevel);
       };
 };
 
 // Instantiate the terminal
-CatFrogTerminal terminal;
+CatFrogTerminal terminal(Serial);
 
 
 void setup() {
@@ -361,6 +428,20 @@ void setup() {
   
   // Dummy LED thingee
   pinMode(LED_BUILTIN, OUTPUT);
+
+  // Set the input and output pin modes, using internal pullup resistors for digital inputs
+  pinMode(INPUT_PIN_RUN_STOP, INPUT_PULLUP);
+  pinMode(INPUT_PIN_RUN_INDICATOR, INPUT_PULLUP);
+  pinMode(INPUT_PIN_ANALOG_TEMPERATURE, INPUT);
+  pinMode(INPUT_PIN_ANALOG_FUEL_LEVEL, INPUT);
+  //
+  pinMode(OUTPUT_GENERATOR_STARTER_CONTACTOR, OUTPUT);
+  pinMode(OUTPUT_GENERATOR_OUTPUT_ENABLED, OUTPUT);
+  pinMode(OUTPUT_INDICATOR_ERROR, OUTPUT);
+  pinMode(OUTPUT_INDICATOR_WARNING, OUTPUT);
+  pinMode(OUTPUT_INDICATOR_ERROR, OUTPUT);
+  pinMode(OUTPUT_INDICATOR_TEMPERATURE, OUTPUT);
+  pinMode(OUTPUT_INDICATOR_FUEL, OUTPUT);
 }
 
 void loop() {
@@ -370,6 +451,7 @@ void loop() {
   if(mediumTimeFlag == true) {
     mediumTimeFlag = false;
 
+    // terminal.readSerialAndProcessCommands(&programVars);
     // While there are characters in the Serial buffer
     // read them in one at a time into sBuffer
     // We need to go via char probably due to implicit type conversions
@@ -381,13 +463,63 @@ void loop() {
     // If the buffers end in newline, try to parse the command an arguments
     if(serialBuffer.endsWith("\n")) {
       // Print out the buffer - for fun
-      // Serial.println(serialBuffer);
+      Serial.println(serialBuffer);
       // Process the commands
       terminal.processCommands(serialBuffer, &programVars, &messages);
       // Print the message
       Serial.println(messages);
       // Reset the buffer to empty
       serialBuffer = "";
+    } 
+
+    /**
+     * The following block will be abstracted away in due time
+     * Wrap the following in functions to map the reality to the value
+     */
+    // Read inputs if set
+    if(programVars.readInputs == true) {
+      // There are pullups on all digital inputs
+      // Digital inputs come via an opto anyway soo...
+      programVars.inputRunStop = digitalRead(INPUT_PIN_RUN_STOP);
+      programVars.inpputRunIndicator = digitalRead(INPUT_PIN_RUN_INDICATOR);
+      programVars.inputTemperature = analogRead(INPUT_PIN_ANALOG_TEMPERATURE);
+      programVars.inputFuelLevel = analogRead(INPUT_PIN_ANALOG_FUEL_LEVEL);
+    }
+    
+    /**
+     * Check environmental thresholds
+     * 
+     * TODO:
+     *   * Counters on all inputs before true (count up and down, clamped at 0 and max
+     *   * Shutdown function
+     *   * Logic to not calculate outputs when in error state
+     *   * When error cleared then generator should start again if run is set
+     */
+    // This logic sucks, we need to reset if not true etc. much needed here.
+    if(programVars.inputTemperature >= programVars.checkLevelTemperatureMax){
+      // TODO: We need a counter in here so it has to be set for X seconds
+      bitSet(programVars.generatorError, ERROR_TEMPERATURE);
+    } else if(programVars.inputTemperature >= programVars.checkLevelTemperatureWarning){
+      bitSet(programVars.generatorError, WARNING_TEMPERATURE);
+    }
+    if(programVars.inputFuelLevel <= programVars.checkLevelFuelLevelMin){
+      bitSet(programVars.generatorError, ERROR_FUEL);
+    } else if(programVars.inputFuelLevel <= programVars.checkLevelFuelLevelWarning){
+      bitSet(programVars.generatorError, WARNING_FUEL);
+    }
+    // Check if we are in warning or error state
+    if(programVars.generatorError > WARNING_THRESHOLD){
+      // Error state, shut down!
+      // shutdown function, continue to log/monitor fuel and temperature levels
+      programVars.outputIndicatorError = true;
+      programVars.outputIndicatorTemperature = bitRead(programVars.generatorError, ERROR_TEMPERATURE);
+      programVars.outputIndicatorFuelLevel = bitRead(programVars.generatorError, ERROR_FUEL);
+    } else if (programVars.generatorError > 0){
+      // Warning state
+      programVars.outputIndicatorWarning = true;
+      programVars.outputIndicatorTemperature = bitRead(programVars.generatorError, WARNING_TEMPERATURE);
+      programVars.outputIndicatorFuelLevel = bitRead(programVars.generatorError,WARNING_FUEL);
+
     }
   }
 

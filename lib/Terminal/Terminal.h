@@ -6,6 +6,11 @@
 #pragma once
 
 #include "Arduino.h"
+#include <avr/pgmspace.h>
+
+// Serial defines, please override in main.cpp
+// #define TERMINAL_SERIAL_NUMBER 0
+#define TERMINAL_SERIAL_BAUD          115200
 
 // Argument type defines
 #define ARGUMENT_TYPE_NONE            0
@@ -16,12 +21,30 @@
 template <typename ProgramVars>
 class Terminal {
     public:
-        Terminal(void);
-        ~Terminal(void);
+        Terminal(Stream & Serial);
+        ~Terminal();
+
+
+        /**
+         * The 'setup' function
+         */
+        void setup(void);
+
+
+        /**
+         * Serial variables and functions
+         */
 
         // Serial buffer and message
         String serialBuffer = "";
         String messages = "";
+
+        String strSep = ",";
+
+        /**
+         * Get messages from serial, process commands, and print results
+         */
+        void readSerialAndProcessCommands(ProgramVars *progVars);
 
         // A 'struct' to hold parsed commands and arguments
         struct CommandAndArguments {
@@ -31,10 +54,6 @@ class Terminal {
             String  argString;
             boolean parseState;
         };
-
-        /**
-         * The 'setup' function
-         */
 
         /** This function takes a string and separates out the command and argument
          * The command is the first character, the argument is the remainder
@@ -124,6 +143,7 @@ class Terminal {
         
         virtual String formatProgVars(long time, ProgramVars progVars) = 0;
     private:
+        Stream & _Serial;
         /** 
          * The standard OP for getting/setting/displaying command and args
          * This is the generic Integer type
