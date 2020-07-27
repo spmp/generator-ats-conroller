@@ -919,14 +919,14 @@ bool read_generator_running(uint8_t digitalInputPin, uint16_t debounceNum) {
  * ready for use by the application. i.e witches are debounced,
  * and analogue signals are calibrated/corrected
  */
-void read_inputs(void) {
+void read_inputs(ProgramVars *progVars, uint16_t periodTimeMillis) {
 
-    programVars.inputRunStop = read_run_stop(
-      INPUT_PIN_RUN_STOP, programVars.startSwitchDebounceCount);
-    programVars.inpputRunIndicator = read_generator_running(
-      INPUT_PIN_RUN_INDICATOR, programVars.generatorRunningDebounceCount);
-    programVars.inputTemperature = analogRead(INPUT_PIN_ANALOG_TEMPERATURE);
-    programVars.inputFuelLevel = analogRead(INPUT_PIN_ANALOG_FUEL_LEVEL);
+    progVars->inputRunStop = read_run_stop(
+      INPUT_PIN_RUN_STOP, progVars->startSwitchDebounceCount);
+    progVars->inpputRunIndicator = read_generator_running(
+      INPUT_PIN_RUN_INDICATOR, progVars->generatorRunningDebounceCount);
+    progVars->inputTemperature = analogRead(INPUT_PIN_ANALOG_TEMPERATURE);
+    progVars->inputFuelLevel = analogRead(INPUT_PIN_ANALOG_FUEL_LEVEL);
 }
 
 uint16_t secondsToTicks(uint16_t seconds, uint16_t ticksPerCycle) {
@@ -936,7 +936,7 @@ uint16_t secondsToTicks(uint16_t seconds, uint16_t ticksPerCycle) {
 /**
  * Calculate the state - i.e start, stop, and manage the generator
  */
-void calculate_state(void) {
+void calculate_state(ProgramVars *progVars, uint16_t periodTimeMillis) {
   // programVars.outputGeneratorStarterContactor = programVars.inputRunStop;
   // programVars.outputGeneratorOutputEnable = programVars.inpputRunIndicator;
 
@@ -947,182 +947,182 @@ void calculate_state(void) {
   // Lets determine if there is a state change and which one
   // We need to debounce this input somehow. Maybe count up debounce max-> starting and down to 0-> stopping
   // Serial.print("calculating state. ");
-  if(programVars.inputRunStop == true){
+  if(progVars->inputRunStop == true){
     // Serial.print("runStop true, ");
-    if(programVars.generatorState == GENERATOR_STATE_ON) {
+    if(progVars->generatorState == GENERATOR_STATE_ON) {
       // Serial.print("generator ON, ");
       // Check whether we are still in a 'running' state.
       // If not, move to retry
-      if(programVars.inpputRunIndicator == false) {
-        programVars.outputGeneratorOutputEnable = false;
-        programVars.generatorState = GENERATOR_STATE_RETRY_WAIT;
+      if(progVars->inpputRunIndicator == false) {
+        progVars->outputGeneratorOutputEnable = false;
+        progVars->generatorState = GENERATOR_STATE_RETRY_WAIT;
       }
-    } else if(programVars.generatorState == GENERATOR_STATE_RUNNING) {
+    } else if(progVars->generatorState == GENERATOR_STATE_RUNNING) {
       // Serial.print("Generator Running, ");
       // We need to move from Running to On, which means waiting the
       // required number of seconds
       // TODO: Can we set the X_TIME_MILLIS context so this is not hard coded to MEDIUM?
-      if(programVars.startToOnTimeCurrentTicks >= secondsToTicks(programVars.startToOnTimeSeconds, MEDIUM_TIME_MILLIS)){
+      if(progVars->startToOnTimeCurrentTicks >= secondsToTicks(progVars->startToOnTimeSeconds, periodTimeMillis)){
         // Sweet, the generator has been on long enough, can set the state to ON
-        programVars.startToOnTimeCurrentTicks = 0;
-        programVars.outputGeneratorOutputEnable = true;
-        programVars.generatorState = GENERATOR_STATE_ON;
+        progVars->startToOnTimeCurrentTicks = 0;
+        progVars->outputGeneratorOutputEnable = true;
+        progVars->generatorState = GENERATOR_STATE_ON;
       } else {
         // We have not quite waited long enough
-        programVars.startToOnTimeCurrentTicks++;
+        progVars->startToOnTimeCurrentTicks++;
         // Let us be safe and ensure that the output is disabled
-        programVars.outputGeneratorOutputEnable = false;
+        progVars->outputGeneratorOutputEnable = false;
       }
-    } else if(programVars.generatorState == GENERATOR_STATE_START_CHECK) {
+    } else if(progVars->generatorState == GENERATOR_STATE_START_CHECK) {
       // We want to ensure that the generator is reporting a 'running' state for a while, and at least the right number of times
-      if(programVars.checkTimeCurrentTicks >= secondsToTicks(programVars.checkTimeSeconds, MEDIUM_TIME_MILLIS)) {
+      if(progVars->checkTimeCurrentTicks >= secondsToTicks(progVars->checkTimeSeconds, periodTimeMillis)) {
         // If the generator is in reporting running, then let us move to running, otherwise retry/wait
-        if(programVars.inpputRunIndicator == true){
+        if(progVars->inpputRunIndicator == true){
           // Good, the generator is reporting a running state, we can begin counting down to enabling the output
-          programVars.checkTimeCurrentTicks = 0;
-          programVars.generatorState = GENERATOR_STATE_RUNNING;
+          progVars->checkTimeCurrentTicks = 0;
+          progVars->generatorState = GENERATOR_STATE_RUNNING;
         } else {
           // Oh dear, we need to retry starting the generator
-          programVars.checkTimeCurrentTicks = 0;
+          progVars->checkTimeCurrentTicks = 0;
           // We set the retry count here!
-          programVars.numRetries++;
-          programVars.outputGeneratorIgnition = false;
-          programVars.generatorState = GENERATOR_STATE_RETRY_WAIT;
+          progVars->numRetries++;
+          progVars->outputGeneratorIgnition = false;
+          progVars->generatorState = GENERATOR_STATE_RETRY_WAIT;
         }
       } else {
         // Incriment the count and check the output debounce
-        programVars.checkTimeCurrentTicks++;
+        progVars->checkTimeCurrentTicks++;
       }
-    } else if(programVars.generatorState == GENERATOR_STATE_STARTING) {
+    } else if(progVars->generatorState == GENERATOR_STATE_STARTING) {
       // We have got to keep that contactor on for the required time period
-      if(programVars.starterContactorTimeCurrentTicks >= secondsToTicks(programVars.starterContactorTimeSeconds, MEDIUM_TIME_MILLIS)) {
+      if(progVars->starterContactorTimeCurrentTicks >= secondsToTicks(progVars->starterContactorTimeSeconds, periodTimeMillis)) {
         // Sweet, the contactor has been on long enough
-        programVars.starterContactorTimeCurrentTicks = 0;
-        programVars.outputGeneratorStarterContactor = false;
-        programVars.outputGeneratorIgnition = true;
-        programVars.generatorState = GENERATOR_STATE_START_CHECK;
+        progVars->starterContactorTimeCurrentTicks = 0;
+        progVars->outputGeneratorStarterContactor = false;
+        progVars->outputGeneratorIgnition = true;
+        progVars->generatorState = GENERATOR_STATE_START_CHECK;
       } else {
         // Lets keep the contactor on
-        programVars.starterContactorTimeCurrentTicks++;
-        programVars.outputGeneratorStarterContactor = true;
-        programVars.outputGeneratorIgnition = true;
+        progVars->starterContactorTimeCurrentTicks++;
+        progVars->outputGeneratorStarterContactor = true;
+        progVars->outputGeneratorIgnition = true;
       }
     } else if(
-      programVars.generatorState == GENERATOR_STATE_STOPPING ||
-      programVars.generatorState == GENERATOR_STATE_OFF) {
+      progVars->generatorState == GENERATOR_STATE_STOPPING ||
+      progVars->generatorState == GENERATOR_STATE_OFF) {
         // Serial.print("setting to Starting, ");
-        programVars.startSwitchDebounceCurrentTicks = 0;
-        programVars.starterContactorTimeCurrentTicks = 0;
-        programVars.startToOnTimeCurrentTicks = 0;
-        programVars.outputGeneratorIgnition = true;
-        programVars.generatorState = GENERATOR_STATE_STARTING;
-    } else if(programVars.generatorState == GENERATOR_STATE_RETRY_WAIT) {
+        progVars->startSwitchDebounceCurrentTicks = 0;
+        progVars->starterContactorTimeCurrentTicks = 0;
+        progVars->startToOnTimeCurrentTicks = 0;
+        progVars->outputGeneratorIgnition = true;
+        progVars->generatorState = GENERATOR_STATE_STARTING;
+    } else if(progVars->generatorState == GENERATOR_STATE_RETRY_WAIT) {
       // If the maximum number of retries is exceeded, then we shutdown and go to error state
-      if(programVars.numRetries >= programVars.maxRetries) {
-        programVars.numRetries = 0;
-        programVars.generatorState = GENERATOR_STATE_START_ERROR;
+      if(progVars->numRetries >= progVars->maxRetries) {
+        progVars->numRetries = 0;
+        progVars->generatorState = GENERATOR_STATE_START_ERROR;
         // Lets turn off the outputs just to be sure
-        programVars.outputGeneratorStarterContactor = false;
-        programVars.outputGeneratorOutputEnable = false;
-      } else if(programVars.retryWaitTimeCurrentTicks >= secondsToTicks(programVars.retryWaitTimeSeconds, MEDIUM_TIME_MILLIS)){
+        progVars->outputGeneratorStarterContactor = false;
+        progVars->outputGeneratorOutputEnable = false;
+      } else if(progVars->retryWaitTimeCurrentTicks >= secondsToTicks(progVars->retryWaitTimeSeconds, periodTimeMillis)){
         // Lets try starting again
-        programVars.retryWaitTimeCurrentTicks = 0;
-        programVars.generatorState = GENERATOR_STATE_STARTING;
+        progVars->retryWaitTimeCurrentTicks = 0;
+        progVars->generatorState = GENERATOR_STATE_STARTING;
       } else {
         // Incriment that timer
-        programVars.retryWaitTimeCurrentTicks++;
+        progVars->retryWaitTimeCurrentTicks++;
       }
     } else if(
-      programVars.generatorState == GENERATOR_STATE_START_ERROR ||
-      programVars.generatorState == GENERATOR_STATE_STOP_ERROR) {
+      progVars->generatorState == GENERATOR_STATE_START_ERROR ||
+      progVars->generatorState == GENERATOR_STATE_STOP_ERROR) {
       // Reset all the counters, and... do nothing as we are in error and
       // it is not the role of this process to correct it.
-      programVars.outputGeneratorIgnition = false;
-      programVars.outputGeneratorStarterContactor = false;
-      programVars.outputGeneratorOutputEnable = false;
-      programVars.startSwitchDebounceCurrentTicks = 0;
-      programVars.starterContactorTimeCurrentTicks = 0;
-      programVars.startToOnTimeCurrentTicks = 0;
+      progVars->outputGeneratorIgnition = false;
+      progVars->outputGeneratorStarterContactor = false;
+      progVars->outputGeneratorOutputEnable = false;
+      progVars->startSwitchDebounceCurrentTicks = 0;
+      progVars->starterContactorTimeCurrentTicks = 0;
+      progVars->startToOnTimeCurrentTicks = 0;
     }
   } else {
     // The run switch is off
-    if (programVars.generatorState == GENERATOR_STATE_OFF) {
+    if (progVars->generatorState == GENERATOR_STATE_OFF) {
       // Do nothing
       // If the generator is running, issue an error
-      if(programVars.inpputRunIndicator == true){
-        programVars.generatorState = GENERATOR_STATE_STOP_ERROR;
+      if(progVars->inpputRunIndicator == true){
+        progVars->generatorState = GENERATOR_STATE_STOP_ERROR;
       }
     } else if (
-        programVars.generatorState == GENERATOR_STATE_RETRY_WAIT ||
-        programVars.generatorState == GENERATOR_STATE_STARTING ||
-        programVars.generatorState == GENERATOR_STATE_START_CHECK ||
-        programVars.generatorState == GENERATOR_STATE_RUNNING ||
-        programVars.generatorState == GENERATOR_STATE_ON) {
+        progVars->generatorState == GENERATOR_STATE_RETRY_WAIT ||
+        progVars->generatorState == GENERATOR_STATE_STARTING ||
+        progVars->generatorState == GENERATOR_STATE_START_CHECK ||
+        progVars->generatorState == GENERATOR_STATE_RUNNING ||
+        progVars->generatorState == GENERATOR_STATE_ON) {
       // Let us stop the generator
-      programVars.outputGeneratorIgnition = false;
-      programVars.outputGeneratorStarterContactor = false;
-      programVars.outputGeneratorOutputEnable = false;
-      programVars.checkTimeCurrentTicks = 0;
-      programVars.generatorState = GENERATOR_STATE_STOPPING;
-    } else if(programVars.generatorState == GENERATOR_STATE_STOPPING) {
+      progVars->outputGeneratorIgnition = false;
+      progVars->outputGeneratorStarterContactor = false;
+      progVars->outputGeneratorOutputEnable = false;
+      progVars->checkTimeCurrentTicks = 0;
+      progVars->generatorState = GENERATOR_STATE_STOPPING;
+    } else if(progVars->generatorState == GENERATOR_STATE_STOPPING) {
       // Use the check time and check if it is running or not given debounce
-      if(programVars.checkTimeCurrentTicks >= secondsToTicks(programVars.checkTimeSeconds, MEDIUM_TIME_MILLIS)) {
+      if(progVars->checkTimeCurrentTicks >= secondsToTicks(progVars->checkTimeSeconds, periodTimeMillis)) {
         // Let us check how many times the input was set off, i.e debounced
-        if(programVars.inpputRunIndicator == false){
+        if(progVars->inpputRunIndicator == false){
           // Good, the generator is reporting a not running state
-          programVars.checkTimeCurrentTicks = 0;
-          programVars.generatorState = GENERATOR_STATE_OFF;
+          progVars->checkTimeCurrentTicks = 0;
+          progVars->generatorState = GENERATOR_STATE_OFF;
         } else {
           // Oh dear, the generator is not turning off! faark
-          programVars.checkTimeCurrentTicks = 0;
-          programVars.generatorState = GENERATOR_STATE_STOP_ERROR;
+          progVars->checkTimeCurrentTicks = 0;
+          progVars->generatorState = GENERATOR_STATE_STOP_ERROR;
         }
       } else {
         // Incriment the count and check the output debounce
-        programVars.checkTimeCurrentTicks++;
+        progVars->checkTimeCurrentTicks++;
       }
     }
   }
 }
 
-void check_limits(void) {
+void check_limits(ProgramVars *progVars, uint16_t periodTimeMillis) {
   // Simply raise the error output for now.
   // You must reset to break out of error
   if(
-      programVars.generatorState == GENERATOR_STATE_START_ERROR || 
-      programVars.generatorState == GENERATOR_STATE_STOP_ERROR) {
-    programVars.outputIndicatorError = true;
+      progVars->generatorState == GENERATOR_STATE_START_ERROR || 
+      progVars->generatorState == GENERATOR_STATE_STOP_ERROR) {
+    progVars->outputIndicatorError = true;
   }
 }
 
-void set_outputs(void) {
-  digitalWrite(OUTPUT_PIN_GENERATOR_IGNITION, programVars.outputGeneratorIgnition);
-  digitalWrite(OUTPUT_PIN_GENERATOR_STARTER_CONTACTOR, programVars.outputGeneratorStarterContactor);
-  digitalWrite(OUTPUT_PIN_GENERATOR_OUTPUT_ENABLED, programVars.outputGeneratorOutputEnable);
-  digitalWrite(OUTPUT_PIN_INDICATOR_ERROR, programVars.outputIndicatorError);
+void set_outputs(ProgramVars *progVars, uint16_t periodTimeMillis) {
+  digitalWrite(OUTPUT_PIN_GENERATOR_IGNITION, progVars->outputGeneratorIgnition);
+  digitalWrite(OUTPUT_PIN_GENERATOR_STARTER_CONTACTOR, progVars->outputGeneratorStarterContactor);
+  digitalWrite(OUTPUT_PIN_GENERATOR_OUTPUT_ENABLED, progVars->outputGeneratorOutputEnable);
+  digitalWrite(OUTPUT_PIN_INDICATOR_ERROR, progVars->outputIndicatorError);
 }
 
 
-void process(void) {
-  if(programVars.processControlEnabled == true) {
+void process(ProgramVars *progVars, uint16_t periodTimeMillis) {
+  if(progVars->processControlEnabled == true) {
     // Read inputs
-    if (programVars.readInputsEnabled) {
-      read_inputs();
+    if (progVars->readInputsEnabled) {
+      read_inputs(progVars, periodTimeMillis);
     }
 
     // Calculate state
-    if (programVars.calculateStateEnabled) {
-      calculate_state();
+    if (progVars->calculateStateEnabled) {
+      calculate_state(progVars, periodTimeMillis);
     }
 
     // Check Limits
-    if (programVars.checkLimitsEnabled) {
-      check_limits();
+    if (progVars->checkLimitsEnabled) {
+      check_limits(progVars, periodTimeMillis);
     }
 
     // Set outputs
-    if (programVars.setOutputsEnabled) {
-      set_outputs();
+    if (progVars->setOutputsEnabled) {
+      set_outputs(progVars, periodTimeMillis);
     }
   }
 }
@@ -1165,7 +1165,7 @@ void run_terminal_toggle_led(){
 // callback. Just 'cause 8(
 void run_process(void){
   // process.process();
-  process();
+  process(&programVars, MEDIUM_TIME_MILLIS);
 }
 
 // Set the timer callback functions, i.e the functions called
