@@ -158,6 +158,7 @@ class Process {
         bool read_run_stop(uint8_t digitalInputPin, uint16_t debounceNum);
         bool read_generator_running(uint8_t digitalInputPin, uint16_t debounceNum);
         uint16_t secondsToTicks(uint16_t seconds, uint16_t ticksPerCycle);
+        bool flash_error_light(bool indicatorState, uint8_t onTicks, uint8_t offTicks);
 };
 
 #endif

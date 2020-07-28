@@ -80,6 +80,7 @@ uint16_t Process::secondsToTicks(uint16_t seconds, uint16_t ticksPerCycle) {
   return seconds*(1000.0/ticksPerCycle);
 }
 
+
 /**
  * Read inputs and process such that the 'input' parameters are
  * ready for use by the application. i.e witches are debounced,
@@ -94,6 +95,7 @@ void Process::read_inputs(ProgramVars *progVars, uint16_t periodTimeMillis) {
     progVars->inputTemperature = analogRead(INPUT_PIN_ANALOG_TEMPERATURE);
     progVars->inputFuelLevel = analogRead(INPUT_PIN_ANALOG_FUEL_LEVEL);
 }
+
 
 /**
  * Calculate the state - i.e start, stop, and manage the generator
@@ -247,13 +249,45 @@ void Process::calculate_state(ProgramVars *progVars, uint16_t periodTimeMillis) 
   }
 }
 
+
+/**
+ * Flash a light with a given on ticks and off time (ticks)
+ */
+bool Process::flash_error_light(bool indicatorState, uint8_t onTicks, uint8_t offTicks) {
+  static uint8_t onTicksCount = 0;
+  static uint8_t offTicksCount = 0;
+  static bool returnState = indicatorState;
+  
+  if(indicatorState == true) {
+    if(onTicksCount++ >= onTicks) {
+      onTicksCount = 0;
+      returnState = false;
+    }
+  } else {
+    if(offTicksCount++ >= offTicks) {
+      offTicksCount = 0;
+      returnState = true;
+    }
+  }
+
+  return returnState;
+}
+
+
+/**
+ * This process function is to check the limit conditions and shut
+ * down or raise warnings if limits breached or are close
+ * 
+ * Right now all this does is flash an error light if the
+ * calculate_state function thinks there is an error
+ */
 void Process::check_limits(ProgramVars *progVars, uint16_t periodTimeMillis) {
   // Simply raise the error output for now.
   // You must reset to break out of error
   if(
       progVars->generatorState == GENERATOR_STATE_START_ERROR || 
       progVars->generatorState == GENERATOR_STATE_STOP_ERROR) {
-    progVars->outputIndicatorError = true;
+    progVars->outputIndicatorError = flash_error_light(progVars->outputIndicatorError, 7, 3);
   }
 }
 

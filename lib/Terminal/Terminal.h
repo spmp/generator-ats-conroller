@@ -1,16 +1,11 @@
 /** 
  * This is an abstract class for terminal interaction in Arduino
  */
-#ifndef ARDUINO_TERMINAL
-#define ARDUINO_TERMINAL
+#ifndef _ARDUINO_TERMINAL
+#define _ARDUINO_TERMINAL
 #pragma once
 
 #include "Arduino.h"
-#include <avr/pgmspace.h>
-
-// Serial defines, please override in main.cpp
-// #define TERMINAL_SERIAL_NUMBER 0
-#define TERMINAL_SERIAL_BAUD          115200
 
 // Argument type defines
 #define ARGUMENT_TYPE_NONE            0
@@ -18,33 +13,10 @@
 #define ARGUMENT_TYPE_DOUBLE          2
 #define ARGUMENT_TYPE_STRING          3
 
-template <typename ProgramVars>
 class Terminal {
     public:
-        Terminal(Stream & Serial);
+        Terminal();
         ~Terminal();
-
-
-        /**
-         * The 'setup' function
-         */
-        void setup(void);
-
-
-        /**
-         * Serial variables and functions
-         */
-
-        // Serial buffer and message
-        String serialBuffer = "";
-        String messages = "";
-
-        String strSep = ",";
-
-        /**
-         * Get messages from serial, process commands, and print results
-         */
-        void readSerialAndProcessCommands(ProgramVars *progVars);
 
         // A 'struct' to hold parsed commands and arguments
         struct CommandAndArguments {
@@ -100,8 +72,9 @@ class Terminal {
         boolean argDisplayOrSetUint32(String argName, CommandAndArguments comAndArg, uint32_t *var, String *message);
         boolean argDisplayOrSetInt32(String argName, CommandAndArguments comAndArg, int32_t *var, String *message);
 
-        boolean argDisplayOrSetUintSt64(String argName, CommandAndArguments comAndArg, uint64_t *var, String *message);
-        boolean argDisplayOrSetInt64(String argName, CommandAndArguments comAndArg, int64_t *var, String *message);
+        // Cant do this with 64bit and Strins. See implimentation
+        // boolean argDisplayOrSetUintSt64(String argName, CommandAndArguments comAndArg, uint64_t *var, String *message);
+        // boolean argDisplayOrSetInt64(String argName, CommandAndArguments comAndArg, int64_t *var, String *message);
 
         /** The standard OP for getting/setting/displaying command and args
          * There are two semi identical forms of this function, one where the 
@@ -130,26 +103,13 @@ class Terminal {
 
         // Boolean version
         boolean argDisplayOrSetBoolean(String argName, CommandAndArguments comAndArg, boolean *var, String *message);
-
-
-        /** 
-         * *do things* based on inputString:
-         *   * Update progVars
-         *   * Show progVars
-         * This function should not change output state, but if vars change
-         * the 'stateChange' flag should be set
-         */
-        virtual int processCommands(String inputString, ProgramVars *progVars, String *message) = 0;
-        
-        virtual String formatProgVars(long time, ProgramVars progVars) = 0;
     private:
-        Stream & _Serial;
         /** 
          * The standard OP for getting/setting/displaying command and args
          * This is the generic Integer type
          **/
         template <typename Z>
-        boolean argDisplayOrSetGenericInteger(String argName, Terminal<ProgramVars>::CommandAndArguments comAndArg, Z *var, String *message);
+        boolean argDisplayOrSetGenericInteger(String argName, CommandAndArguments comAndArg, Z *var, String *message);
 
 };
 
