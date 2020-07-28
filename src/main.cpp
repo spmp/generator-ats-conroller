@@ -94,55 +94,37 @@ ProgramVars programVars = {
   .outputIndicatorFuelLevel = false
 };
 
-
-
-
 /**
  * Program Control Things
  */
 Process process;
-
-/**
- * Terminal
- */
-MyTerminal terminal(Serial, &programVars);
-/*****************************************************
- * Bringing it together closer to the main loop
- * 
- * 
- ****************************************************/
-
-
-/**
- * This function needs to be incorporated into MyTerminal
- * We may have issues wiht Serial and where it comes from etc...
- * design is by shotgun here
- * 
- * Gross, using in scope variables... yuk
- */
-void run_terminal_toggle_led(){
-
-  // Handle the serial input and process 
-  terminal.handle_serial_input();
-
-  // Def once per second
-  // print logging info if enabled
-  if (programVars.loggingEnabled == true) {
-  // if (programVars.inputRunStop == true) {
-  // if (digitalRead(INPUT_PIN_RUN_STOP) == true) {
-    String logMessage = terminal.formatProgVars(timestamp);    
-    Serial.println(logMessage);
-  }
-
-  // Toggle the LED
-  digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-}
 
 // We have to wrap the non-static member function to call in our
 // callback. Just 'cause 8(
 void run_process(void){
   process.process(&programVars, MEDIUM_TIME_MILLIS);
 }
+
+/**
+ * Terminal
+ */
+MyTerminal terminal(Serial, &programVars);
+
+/**
+ * Proess the terminal, print logs, and toggel LED once a second
+ */
+void run_terminal_toggle_led(){
+
+  // Handle the serial input and process 
+  terminal.handle_serial_input();
+
+  // Print the logs once per second
+  terminal.print_logs();
+
+  // Toggle the LED
+  digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+}
+
 
 // Set the timer callback functions, i.e the functions called
 // every short, medium, and long time

@@ -31,7 +31,7 @@ class MyTerminal {
         ~MyTerminal(void);
 
         void handle_serial_input(void);
-        String formatProgVars(long time);
+        void print_logs(void);
     private:
         String serialBuffer = "";
         String messages = "";
@@ -50,6 +50,7 @@ class MyTerminal {
         };
 
         int processCommands(String inputString, String *message);
+        String formatProgVars(long time);
 
         int getCommandAndArgument(String inputString, char *command, String *argument);
         int stringToLong(String inputString, long *targetInt);

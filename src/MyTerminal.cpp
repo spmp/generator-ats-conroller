@@ -358,6 +358,17 @@ void MyTerminal::handle_serial_input(void) {
     // Reset the buffer to empty
     serialBuffer = "";
   }
+
+}
+
+void MyTerminal::print_logs(void){
+   // print logging info if enabled
+  if (_progVars->loggingEnabled == true) {
+  // if (programVars.inputRunStop == true) {
+  // if (digitalRead(INPUT_PIN_RUN_STOP) == true) {
+    String logMessage = formatProgVars(timestamp);    
+    _Serial.println(logMessage);
+  }
 }
 
 String MyTerminal::formatProgVars(long time) {
