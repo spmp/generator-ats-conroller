@@ -35,50 +35,6 @@ F 3 "http://www.ti.com/lit/ds/symlink/max232.pdf" H 2550 5950 50  0001 C CNN
 	1    2550 5850
 	1    0    0    -1  
 $EndComp
-$Comp
-L Device:C C?
-U 1 1 5F2662F8
-P 1550 5100
-F 0 "C?" H 1665 5146 50  0000 L CNN
-F 1 "0.1uF" H 1665 5055 50  0000 L CNN
-F 2 "" H 1588 4950 50  0001 C CNN
-F 3 "~" H 1550 5100 50  0001 C CNN
-	1    1550 5100
-	1    0    0    -1  
-$EndComp
-$Comp
-L Device:C C?
-U 1 1 5F2691ED
-P 3550 5100
-F 0 "C?" H 3665 5146 50  0000 L CNN
-F 1 "0.1uF" H 3665 5055 50  0000 L CNN
-F 2 "" H 3588 4950 50  0001 C CNN
-F 3 "~" H 3550 5100 50  0001 C CNN
-	1    3550 5100
-	1    0    0    -1  
-$EndComp
-$Comp
-L Device:C C?
-U 1 1 5F269678
-P 4000 5300
-F 0 "C?" H 4115 5346 50  0000 L CNN
-F 1 "0.1uF" H 4115 5255 50  0000 L CNN
-F 2 "" H 4038 5150 50  0001 C CNN
-F 3 "~" H 4000 5300 50  0001 C CNN
-	1    4000 5300
-	1    0    0    -1  
-$EndComp
-$Comp
-L Device:C C?
-U 1 1 5F269EC4
-P 4300 5900
-F 0 "C?" H 4415 5946 50  0000 L CNN
-F 1 "0.1uF" H 4415 5855 50  0000 L CNN
-F 2 "" H 4338 5750 50  0001 C CNN
-F 3 "~" H 4300 5900 50  0001 C CNN
-	1    4300 5900
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	1750 4950 1550 4950
 Wire Wire Line
@@ -95,8 +51,6 @@ Wire Wire Line
 	2750 1450 2750 1300
 Wire Wire Line
 	2450 1450 2450 1100
-Text GLabel 4000 4850 1    50   Input ~ 0
-5v
 $Comp
 L power:GND #PWR?
 U 1 1 5F295048
@@ -119,8 +73,6 @@ F 3 "" H 2550 7250 50  0001 C CNN
 	1    2550 7250
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	3350 5450 4000 5450
 Text GLabel 1750 1850 0    50   Input ~ 0
 Tx
 Text GLabel 1750 1950 0    50   Input ~ 0
@@ -185,7 +137,7 @@ Wire Wire Line
 Text GLabel 2550 4400 1    50   Input ~ 0
 5v
 Wire Wire Line
-	2550 4400 2550 4650
+	2550 4400 2550 4550
 Wire Wire Line
 	6100 7150 6450 7150
 Wire Wire Line
@@ -539,7 +491,7 @@ L Device:R R?
 U 1 1 5F3F3ED0
 P 4500 4450
 F 0 "R?" H 4430 4404 50  0000 R CNN
-F 1 "2.7k" H 4430 4495 50  0000 R CNN
+F 1 "1k" H 4430 4495 50  0000 R CNN
 F 2 "" V 4430 4450 50  0001 C CNN
 F 3 "~" H 4500 4450 50  0001 C CNN
 	1    4500 4450
@@ -612,8 +564,6 @@ Wire Wire Line
 	4850 4700 5250 4700
 Wire Wire Line
 	4850 4200 5100 4200
-Wire Wire Line
-	4000 4850 4000 5150
 $Comp
 L Connector_Generic:Conn_01x03 J?
 U 1 1 5F2976DB
@@ -637,4 +587,98 @@ Text GLabel 6100 7150 0    50   Input ~ 0
 TxExternal
 Text GLabel 6100 6750 0    50   Input ~ 0
 RxExternal
+$Comp
+L power:GND #PWR?
+U 1 1 5F4B4680
+P 4700 6150
+F 0 "#PWR?" H 4700 5900 50  0001 C CNN
+F 1 "GND" H 4705 5977 50  0000 C CNN
+F 2 "" H 4700 6150 50  0001 C CNN
+F 3 "" H 4700 6150 50  0001 C CNN
+	1    4700 6150
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4700 6150 4700 6050
+Wire Wire Line
+	4700 5750 4700 5450
+Wire Wire Line
+	3350 5450 4700 5450
+$Comp
+L Device:CP C?
+U 1 1 5F4BEB4E
+P 1550 5100
+F 0 "C?" H 1668 5146 50  0000 L CNN
+F 1 "1uf" H 1668 5055 50  0000 L CNN
+F 2 "" H 1588 4950 50  0001 C CNN
+F 3 "~" H 1550 5100 50  0001 C CNN
+	1    1550 5100
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:CP C?
+U 1 1 5F4C0CED
+P 3550 5100
+F 0 "C?" H 3668 5146 50  0000 L CNN
+F 1 "1uf" H 3668 5055 50  0000 L CNN
+F 2 "" H 3588 4950 50  0001 C CNN
+F 3 "~" H 3550 5100 50  0001 C CNN
+	1    3550 5100
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:CP C?
+U 1 1 5F4C10F1
+P 4700 5900
+F 0 "C?" H 4818 5946 50  0000 L CNN
+F 1 "1uf" H 4818 5855 50  0000 L CNN
+F 2 "" H 4738 5750 50  0001 C CNN
+F 3 "~" H 4700 5900 50  0001 C CNN
+	1    4700 5900
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:CP C?
+U 1 1 5F4C1502
+P 4300 5900
+F 0 "C?" H 4182 5854 50  0000 R CNN
+F 1 "1uf" H 4182 5945 50  0000 R CNN
+F 2 "" H 4338 5750 50  0001 C CNN
+F 3 "~" H 4300 5900 50  0001 C CNN
+	1    4300 5900
+	-1   0    0    1   
+$EndComp
+$Comp
+L Device:CP C?
+U 1 1 5F4C6ED9
+P 3950 4750
+F 0 "C?" H 4068 4796 50  0000 L CNN
+F 1 "1uf" H 4068 4705 50  0000 L CNN
+F 2 "" H 3988 4600 50  0001 C CNN
+F 3 "~" H 3950 4750 50  0001 C CNN
+	1    3950 4750
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2550 4550 3950 4550
+Wire Wire Line
+	3950 4550 3950 4600
+Connection ~ 2550 4550
+Wire Wire Line
+	2550 4550 2550 4650
+$Comp
+L power:GND #PWR?
+U 1 1 5F4CAC20
+P 3950 5150
+F 0 "#PWR?" H 3950 4900 50  0001 C CNN
+F 1 "GND" H 3955 4977 50  0000 C CNN
+F 2 "" H 3950 5150 50  0001 C CNN
+F 3 "" H 3950 5150 50  0001 C CNN
+	1    3950 5150
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3950 4900 3950 5150
+Wire Wire Line
+	2050 2850 1750 2850
 $EndSCHEMATC
