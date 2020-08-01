@@ -9,41 +9,20 @@
 
 #include "Arduino.h"
 
+
 /** Default variable settings **/
 // IO
-#ifndef INPUT_PIN_RUN_STOP
-#define INPUT_PIN_RUN_STOP                      A0
-#endif
-#ifndef INPUT_PIN_RUN_INDICATOR
-#define INPUT_PIN_RUN_INDICATOR                 A1
-#endif
-#ifndef INPUT_PIN_ANALOG_TEMPERATURE
-#define INPUT_PIN_ANALOG_TEMPERATURE            A2
-#endif
-#ifndef INPUT_PIN_ANALOG_FUEL_LEVEL
-#define INPUT_PIN_ANALOG_FUEL_LEVEL             A3
-#endif
-#ifndef OUTPUT_PIN_GENERATOR_IGNITION
-#define OUTPUT_PIN_GENERATOR_IGNITION           7
-#endif
-#ifndef OUTPUT_PIN_GENERATOR_STARTER_CONTACTOR
-#define OUTPUT_PIN_GENERATOR_STARTER_CONTACTOR  8
-#endif
-#ifndef OUTPUT_PIN_GENERATOR_OUTPUT_ENABLED
-#define OUTPUT_PIN_GENERATOR_OUTPUT_ENABLED     9
-#endif
-#ifndef OUTPUT_PIN_INDICATOR_ERROR
-#define OUTPUT_PIN_INDICATOR_ERROR              10
-#endif
-#ifndef OUTPUT_PIN_INDICATOR_WARNING
-#define OUTPUT_PIN_INDICATOR_WARNING            11
-#endif
-#ifndef OUTPUT_PIN_INDICATOR_TEMPERATURE
-#define OUTPUT_PIN_INDICATOR_TEMPERATURE        12
-#endif
-#ifndef OUTPUT_PIN_INDICATOR_FUEL
-#define OUTPUT_PIN_INDICATOR_FUEL               13
-#endif
+#define INPUT_PIN_RUN_STOP                      A1
+#define INPUT_PIN_RUN_INDICATOR                 A2
+#define INPUT_PIN_ANALOG_TEMPERATURE            A3
+#define INPUT_PIN_ANALOG_FUEL_LEVEL             A4
+#define OUTPUT_PIN_GENERATOR_IGNITION           4
+#define OUTPUT_PIN_GENERATOR_STARTER_CONTACTOR  5
+#define OUTPUT_PIN_GENERATOR_OUTPUT_ENABLED     6
+#define OUTPUT_PIN_INDICATOR_ERROR              7
+#define OUTPUT_PIN_INDICATOR_WARNING            8
+#define OUTPUT_PIN_INDICATOR_TEMPERATURE        9
+#define OUTPUT_PIN_INDICATOR_FUEL               10
 
 
 // Generator states

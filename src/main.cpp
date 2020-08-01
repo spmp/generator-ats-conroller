@@ -3,20 +3,6 @@
 #include "Process.h"
 #include "MyTerminal.h"
 
-/** Default variable settings **/
-// IO
-#define INPUT_PIN_RUN_STOP                      A0
-#define INPUT_PIN_RUN_INDICATOR                 A1
-#define INPUT_PIN_ANALOG_TEMPERATURE            A2
-#define INPUT_PIN_ANALOG_FUEL_LEVEL             A3
-#define OUTPUT_PIN_GENERATOR_IGNITION           7
-#define OUTPUT_PIN_GENERATOR_STARTER_CONTACTOR  8
-#define OUTPUT_PIN_GENERATOR_OUTPUT_ENABLED     9
-#define OUTPUT_PIN_INDICATOR_ERROR              10
-#define OUTPUT_PIN_INDICATOR_WARNING            11
-#define OUTPUT_PIN_INDICATOR_TEMPERATURE        12
-#define OUTPUT_PIN_INDICATOR_FUEL               13
-
 
 /**
  * Program VARS 
@@ -94,6 +80,7 @@ ProgramVars programVars = {
   .outputIndicatorFuelLevel = false
 };
 
+
 /**
  * Program Control Things
  */
@@ -104,6 +91,7 @@ Process process;
 void run_process(void){
   process.process(&programVars, MEDIUM_TIME_MILLIS);
 }
+
 
 /**
  * Terminal
@@ -126,11 +114,6 @@ void run_terminal_toggle_led(){
 }
 
 
-// Set the timer callback functions, i.e the functions called
-// every short, medium, and long time
-// timer_set_fast_time_callback(&medium_timestep);
-// timer_set_medium_time_callback(&fast_timestep);
-
 void setup() {
   // Initialise the serial hardware at baude 115200
   Serial.begin(115200);
@@ -148,6 +131,7 @@ void setup() {
   timer_set_long_time_callback(&run_terminal_toggle_led);
   timer_set_medium_time_callback(&run_process);
 }
+
 
 void loop() {
   // Run timed processes
