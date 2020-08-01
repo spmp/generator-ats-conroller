@@ -86,6 +86,7 @@ ProgramVars programVars = {
  */
 Process process;
 
+
 // We have to wrap the non-static member function to call in our
 // callback. Just 'cause 8(
 void run_process(void){
@@ -97,6 +98,7 @@ void run_process(void){
  * Terminal
  */
 MyTerminal terminal(Serial, &programVars);
+
 
 /**
  * Proess the terminal, print logs, and toggel LED once a second

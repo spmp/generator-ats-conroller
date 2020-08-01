@@ -3,18 +3,157 @@
  */
 #include "Terminal.h"
 
+/**
+ * The following are examples of how the two abstract functions should be implemented
+ */
+// getAndSetProgramVars(CommandAndArguments comArgState, String *message) {
+//   // Let us process the commands
+//   switch (comArgState.command)
+//   {
+//   case 'h':
+//     _progVars->stateChange = false;
+//     *message = String("Help: Help message, ,careful of Strings, they suck");
+//     break;
+//   case 'L':
+//     _progVars->stateChange = argDisplayOrSetBoolean("loggingEnabled", comArgState, &_progVars->loggingEnabled, message);
+//     break;
+//   // Process control stages
+//   case 'P':
+//     _progVars->stateChange = argDisplayOrSetBoolean("processControlEnabled", comArgState, &_progVars->processControlEnabled, message);
+//     break;
+//   case 'I':
+//     _progVars->stateChange = argDisplayOrSetBoolean("readInputsEnabled", comArgState, &_progVars->readInputsEnabled, message);
+//     break;
+//   case 'Y':
+//     _progVars->stateChange = argDisplayOrSetBoolean("calculateStateEnabled", comArgState, &_progVars->calculateStateEnabled, message);
+//     break;
+//   case 'U':
+//     _progVars->stateChange = argDisplayOrSetBoolean("checkLimitsEnabled", comArgState, &_progVars->checkLimitsEnabled, message);
+//     break;
+//   case 'O':
+//     _progVars->stateChange = argDisplayOrSetBoolean("setOutputsEnabled", comArgState, &_progVars->setOutputsEnabled, message);
+//     break;
+//   case 'r':
+//     _progVars->stateChange = argDisplayOrSetUint16("generatorState", comArgState, &_progVars->generatorState, message);
+//     break;
+//   case 'S':
+//     _progVars->stateChange = argDisplayOrSetUint8("maxRetries", comArgState, &_progVars->maxRetries, message);
+//     break;
+//   case 'T':
+//     _progVars->stateChange = argDisplayOrSetFloatFromLong("checkLevelTemperatureMax", comArgState, &_progVars->checkLevelTemperatureMax, 100, message);
+//     break;
+//   default:
+//     _progVars->stateChange = false;
+//     *message = "No recognised command";
+//     break;
+//   }
+// };
+
+// String MyTerminal::formatProgVars(long time) {
+//   return String(time) +
+//       String(", R: ") +
+//       String(_progVars->numRetries) +
+//       String("/") +
+//       String(_progVars->maxRetries) +
+//       String(F(", P: ")) +
+//       String(_progVars->processControlEnabled) +
+//       String(strSep) +
+//       String(_progVars->readInputsEnabled) +
+//       String(strSep) +
+//       String(_progVars->calculateStateEnabled) +
+//       String(strSep) +
+//       String(_progVars->checkLimitsEnabled) +
+//       String(strSep) +
+//       String(_progVars->setOutputsEnabled) +
+//       String(F(", WE: ")) +
+//       String(_progVars->generatorWarning) +
+//       String(strSep) +
+//       String(_progVars->generatorError) +
+//   // Inputs
+//       String(F(", I: ")) +
+//       String(_progVars->inputRunStop) +
+//       String(strSep) +
+//       String(_progVars->inpputRunIndicator) +
+//   // Outputs
+//       String(F(", O: ")) +
+//       String(_progVars->outputGeneratorIgnition) +
+//       String(strSep) +
+//       String(_progVars->outputGeneratorStarterContactor) +
+//       String(strSep) +
+//       String(_progVars->outputGeneratorOutputEnable) +
+//       String(strSep) +
+//       String(_progVars->outputIndicatorError) ;
+// };
 
 /**
  * Constructor
  */
-Terminal::Terminal() {}
-
+template <typename ProgramVars>
+Terminal<ProgramVars>::Terminal(Stream & Serial, ProgramVars *programVars): _Serial (Serial) {
+  _progVars = programVars;
+}
 
 /**
  * Deconstructor
  */
-Terminal::~Terminal() {}
+template <typename ProgramVars>
+Terminal<ProgramVars>::~Terminal() {}
 
+template <typename ProgramVars>
+void Terminal<ProgramVars>::handle_serial_input(void) {
+  // terminal.readSerialAndProcessCommands(&programVars);
+  // While there are characters in the Serial buffer
+  // read them in one at a time into sBuffer
+  // We need to go via char probably due to implicit type conversions
+  while(Serial.available() > 0){
+    char inChar = Serial.read();
+    serialBuffer += inChar;
+  }
+
+  // If the buffers end in newline, try to parse the command an arguments
+  if(serialBuffer.endsWith("\n")) {
+    // Print out the buffer - for fun
+    Serial.println(serialBuffer);
+    // Process the commands
+    processCommands(serialBuffer, &messages);
+    // Print the message
+    Serial.println(messages);
+    // Reset the buffer to empty
+    serialBuffer = "";
+  }
+
+}
+
+template <typename ProgramVars>
+void Terminal<ProgramVars>::print_logs(void){
+   // print logging info if enabled
+  if (_progVars->loggingEnabled == true) {
+  // if (programVars.inputRunStop == true) {
+  // if (digitalRead(INPUT_PIN_RUN_STOP) == true) {
+    String logMessage = formatProgVars(timestamp);    
+    _Serial.println(logMessage);
+  }
+}
+
+/**
+ * Process the UART commands, updating the variables via or 'getAndSetProgramVars'
+ * producing a string message
+ */
+template <typename ProgramVars>
+int Terminal<ProgramVars>::processCommands(String inputString, String *message) {
+  // Parse the 'inputString'
+  CommandAndArguments comArgState = parseCommandArgs(inputString);
+
+  // Exit with message if no command
+  if (comArgState.parseState == EXIT_FAILURE) {
+    *message = F("Input string is not a valid command/argument");
+    return EXIT_FAILURE;
+  }
+
+  getAndSetProgramVars(comArgState, message);
+
+  return EXIT_SUCCESS;
+}
 
 /** This function takes a string and separates out the command and argument
  * The command is the first character, the argument is the remainder
@@ -25,7 +164,8 @@ Terminal::~Terminal() {}
  * This function returns EXIT_FAILURE (cuold be 0) if it fails,
  * or EXIT_SUCCESS (could be 1) if everything is OK
  **/
-int Terminal::getCommandAndArgument(String inputString, char *command, String *argument) {
+template <typename ProgramVars>
+int Terminal<ProgramVars>::getCommandAndArgument(String inputString, char *command, String *argument) {
     // Check that the String is long enough to process and return fail otherwise
     if (inputString.length() <= 1) {
         return EXIT_FAILURE;
@@ -35,7 +175,6 @@ int Terminal::getCommandAndArgument(String inputString, char *command, String *a
     *argument = inputString.substring(1);
     return EXIT_SUCCESS;
 }
-
 
 /** stringToLong function that returns state
  * Why is state important?
@@ -48,7 +187,8 @@ int Terminal::getCommandAndArgument(String inputString, char *command, String *a
  * pointer to an int if the conversion is successful
  * 
  **/
-int Terminal::stringToLong(String inputString, long *targetInt) {
+template <typename ProgramVars>
+int Terminal<ProgramVars>::stringToLong(String inputString, long *targetInt) {
     // convert the input string to an integer
     int32_t intTemp = inputString.toInt();
     // If the resulting integer is not 0 then no problem
@@ -65,12 +205,12 @@ int Terminal::stringToLong(String inputString, long *targetInt) {
     }    
 }
 
-
 /** Parse the command/args string
  * Find the command if present, and parse the arguments
  * determining where there are none, are a number, or a string
  **/
-typename Terminal::CommandAndArguments Terminal::parseCommandArgs(String commandArgs) {
+template <typename ProgramVars>
+typename Terminal<ProgramVars>::CommandAndArguments Terminal<ProgramVars>::parseCommandArgs(String commandArgs) {
     char comChar = 'h';
     int argType = ARGUMENT_TYPE_NONE;
     long argLong = 0;
@@ -107,47 +247,46 @@ typename Terminal::CommandAndArguments Terminal::parseCommandArgs(String command
     };
 }
 
-
-/**
- * This is an attempt to make a generic function for all Integer types. 
- * It failed.... does not work...
- */
-template <typename Z>
-boolean Terminal::argDisplayOrSetGenericInteger(String argName, Terminal::CommandAndArguments comAndArg, Z *var, String *message) {
-    if (comAndArg.argType == ARGUMENT_TYPE_NONE) {
-    *message = argName + " is : " + String(*var);
-    return false;
-    }
-    if (comAndArg.argType == ARGUMENT_TYPE_LONG) {
-    *var = comAndArg.argLong;
-    *message = "Set '" + argName + "' to : " + String(*var);
-    return true;
-    }
-    return false;
-}
-
+// /**
+//  * This is an attempt to make a generic function for all Integer types. 
+//  * It failed.... does not work...
+//  */
+// template <typename Z>
+// template <typename ProgramVars>
+// boolean Terminal<ProgramVars>::argDisplayOrSetGenericInteger(String argName, Terminal<ProgramVars>::CommandAndArguments comAndArg, Z *var, String *message) {
+//     if (comAndArg.argType == ARGUMENT_TYPE_NONE) {
+//     *message = argName + " is : " + String(*var);
+//     return false;
+//     }
+//     if (comAndArg.argType == ARGUMENT_TYPE_LONG) {
+//     *var = comAndArg.argLong;
+//     *message = "Set '" + argName + "' to : " + String(*var);
+//     return true;
+//     }
+//     return false;
+// }
 
 /**
  * I thought you _should_ be able to do the following, you cant
  */
 // template <typename ProgramVars>
-// boolean Terminal::argDisplayOrSetUint8(String argName, Terminal::CommandAndArguments comAndArg, uint8_t *var, String *message) {
+// boolean Terminal<ProgramVars>::argDisplayOrSetUint8(String argName, Terminal<ProgramVars>::CommandAndArguments comAndArg, uint8_t *var, String *message) {
 //     return argDisplayOrSetGenericInteger<uint8_t>(argName, comAndArg, *var, *message);
 // };
 
 
 // template <typename ProgramVars>
-// boolean Terminal::argDisplayOrSetInt8(String argName, Terminal::CommandAndArguments comAndArg, int8_t *var, String *message) {
+// boolean Terminal<ProgramVars>::argDisplayOrSetInt8(String argName, Terminal<ProgramVars>::CommandAndArguments comAndArg, int8_t *var, String *message) {
 //     return argDisplayOrSetGenericInteger<int8_t>(argName, comAndArg, *var, *message);
 // };
 
 // template <typename ProgramVars>
-// boolean Terminal::argDisplayOrSetUint16(String argName, Terminal::CommandAndArguments comAndArg, uint16_t *var, String *message) {
+// boolean Terminal<ProgramVars>::argDisplayOrSetUint16(String argName, Terminal<ProgramVars>::CommandAndArguments comAndArg, uint16_t *var, String *message) {
 //     return argDisplayOrSetGenericInteger<uint16_t>(argName, comAndArg, *var, *message);
 // };
 
-
-boolean Terminal::argDisplayOrSetUint8(String argName, Terminal::CommandAndArguments comAndArg, uint8_t *var, String *message) {
+template <typename ProgramVars>
+boolean Terminal<ProgramVars>::argDisplayOrSetUint8(String argName, Terminal<ProgramVars>::CommandAndArguments comAndArg, uint8_t *var, String *message) {
     if (comAndArg.argType == ARGUMENT_TYPE_NONE) {
     *message = argName + " is : " + String(*var);
     return false;
@@ -160,8 +299,8 @@ boolean Terminal::argDisplayOrSetUint8(String argName, Terminal::CommandAndArgum
     return false;
 }
 
-
-boolean Terminal::argDisplayOrSetInt8(String argName, Terminal::CommandAndArguments comAndArg, int8_t *var, String *message) {
+template <typename ProgramVars>
+boolean Terminal<ProgramVars>::argDisplayOrSetInt8(String argName, Terminal<ProgramVars>::CommandAndArguments comAndArg, int8_t *var, String *message) {
     if (comAndArg.argType == ARGUMENT_TYPE_NONE) {
     *message = argName + " is : " + String(*var);
     return false;
@@ -174,8 +313,8 @@ boolean Terminal::argDisplayOrSetInt8(String argName, Terminal::CommandAndArgume
     return false;
 }
 
-
-boolean Terminal::argDisplayOrSetUint16(String argName, Terminal::CommandAndArguments comAndArg, uint16_t *var, String *message) {
+template <typename ProgramVars>
+boolean Terminal<ProgramVars>::argDisplayOrSetUint16(String argName, Terminal<ProgramVars>::CommandAndArguments comAndArg, uint16_t *var, String *message) {
     if (comAndArg.argType == ARGUMENT_TYPE_NONE) {
     *message = argName + " is : " + String(*var);
     return false;
@@ -188,8 +327,8 @@ boolean Terminal::argDisplayOrSetUint16(String argName, Terminal::CommandAndArgu
     return false;
 }
 
-
-boolean Terminal::argDisplayOrSetInt16(String argName, Terminal::CommandAndArguments comAndArg, int16_t *var, String *message) {
+template <typename ProgramVars>
+boolean Terminal<ProgramVars>::argDisplayOrSetInt16(String argName, Terminal<ProgramVars>::CommandAndArguments comAndArg, int16_t *var, String *message) {
     if (comAndArg.argType == ARGUMENT_TYPE_NONE) {
     *message = argName + " is : " + String(*var);
     return false;
@@ -202,8 +341,8 @@ boolean Terminal::argDisplayOrSetInt16(String argName, Terminal::CommandAndArgum
     return false;
 }
 
-
-boolean Terminal::argDisplayOrSetUint32(String argName, Terminal::CommandAndArguments comAndArg, uint32_t *var, String *message) {
+template <typename ProgramVars>
+boolean Terminal<ProgramVars>::argDisplayOrSetUint32(String argName, Terminal<ProgramVars>::CommandAndArguments comAndArg, uint32_t *var, String *message) {
     if (comAndArg.argType == ARGUMENT_TYPE_NONE) {
     *message = argName + " is : " + String(*var);
     return false;
@@ -216,8 +355,8 @@ boolean Terminal::argDisplayOrSetUint32(String argName, Terminal::CommandAndArgu
     return false;
 }
 
-
-boolean Terminal::argDisplayOrSetInt32(String argName, Terminal::CommandAndArguments comAndArg, int32_t *var, String *message) {
+template <typename ProgramVars>
+boolean Terminal<ProgramVars>::argDisplayOrSetInt32(String argName, Terminal<ProgramVars>::CommandAndArguments comAndArg, int32_t *var, String *message) {
     if (comAndArg.argType == ARGUMENT_TYPE_NONE) {
     *message = argName + " is : " + String(*var);
     return false;
@@ -235,7 +374,7 @@ boolean Terminal::argDisplayOrSetInt32(String argName, Terminal::CommandAndArgum
  * >lib/Terminal/Terminal.cpp:255:59: error: call of overloaded 'String(int64_t&)' is ambiguous
  *    *message = "Set '" + argName + "' to : " + String(*var);
  */
-// boolean Terminal::argDisplayOrSetUintSt64(String argName, Terminal::CommandAndArguments comAndArg, uint64_t *var, String *message) {
+// boolean Terminal<ProgramVars>::argDisplayOrSetUintSt64(String argName, Terminal<ProgramVars>::CommandAndArguments comAndArg, uint64_t *var, String *message) {
 //     if (comAndArg.argType == ARGUMENT_TYPE_NONE) {
 //     *message = argName + " is : " + String(*var);
 //     return false;
@@ -249,7 +388,7 @@ boolean Terminal::argDisplayOrSetInt32(String argName, Terminal::CommandAndArgum
 // }
 
 
-// boolean Terminal::argDisplayOrSetInt64(String argName, Terminal::CommandAndArguments comAndArg, int64_t *var, String *message) {
+// boolean Terminal<ProgramVars>::argDisplayOrSetInt64(String argName, Terminal<ProgramVars>::CommandAndArguments comAndArg, int64_t *var, String *message) {
 //     if (comAndArg.argType == ARGUMENT_TYPE_NONE) {
 //     *message = argName + " is : " + String(*var);
 //     return false;
@@ -261,13 +400,13 @@ boolean Terminal::argDisplayOrSetInt32(String argName, Terminal::CommandAndArgum
 //     }
 //     return false;
 // }
-
 
 /** The standard OP for getting/setting/displaying command and args
  * There are two semi identical forms of this function, one where the 
  * argument is a number (long), and one where it is a string
  **/
-boolean Terminal::argDisplayOrSetLong(String argName, Terminal::CommandAndArguments comAndArg, long *var, String *message) {
+template <typename ProgramVars>
+boolean Terminal<ProgramVars>::argDisplayOrSetLong(String argName, Terminal<ProgramVars>::CommandAndArguments comAndArg, long *var, String *message) {
     if (comAndArg.argType == ARGUMENT_TYPE_NONE) {
     *message = argName + " is : " + String(*var);
     return false;
@@ -280,12 +419,12 @@ boolean Terminal::argDisplayOrSetLong(String argName, Terminal::CommandAndArgume
     return false;
 }
 
-
 /** The standard OP for getting/setting/displaying command and args
  * There are two semi identical forms of this function, one where the 
  * argument is a number (long), and one where it is a string
  **/
-boolean Terminal::argDisplayOrSetDoubleFromLong(String argName, Terminal::CommandAndArguments comAndArg, double *var, uint16_t denominator, String *message) {
+template <typename ProgramVars>
+boolean Terminal<ProgramVars>::argDisplayOrSetDoubleFromLong(String argName, Terminal<ProgramVars>::CommandAndArguments comAndArg, double *var, uint16_t denominator, String *message) {
     if (comAndArg.argType == ARGUMENT_TYPE_NONE) {
     *message = argName + " is : " + String(*var);
     return false;
@@ -298,12 +437,12 @@ boolean Terminal::argDisplayOrSetDoubleFromLong(String argName, Terminal::Comman
     return false;
 }
 
-
 /** The standard OP for getting/setting/displaying command and args
  * There are two semi identical forms of this function, one where the 
  * argument is a number (long), and one where it is a string
  **/
-boolean Terminal::argDisplayOrSetFloatFromLong(String argName, Terminal::CommandAndArguments comAndArg, float *var, uint16_t denominator, String *message) {
+template <typename ProgramVars>
+boolean Terminal<ProgramVars>::argDisplayOrSetFloatFromLong(String argName, Terminal<ProgramVars>::CommandAndArguments comAndArg, float *var, uint16_t denominator, String *message) {
     if (comAndArg.argType == ARGUMENT_TYPE_NONE) {
     *message = argName + " is : " + String(*var);
     return false;
@@ -315,10 +454,10 @@ boolean Terminal::argDisplayOrSetFloatFromLong(String argName, Terminal::Command
     }
     return false;
 }
-
 
 // String version
-boolean Terminal::argDisplayOrSetString(String argName, Terminal::CommandAndArguments comAndArg, String *var, String *message) {
+template <typename ProgramVars>
+boolean Terminal<ProgramVars>::argDisplayOrSetString(String argName, Terminal<ProgramVars>::CommandAndArguments comAndArg, String *var, String *message) {
     if (comAndArg.argType == ARGUMENT_TYPE_NONE) {
     *message = argName + " is : '" + *var + "'";
     return false;
@@ -331,9 +470,9 @@ boolean Terminal::argDisplayOrSetString(String argName, Terminal::CommandAndArgu
     return false;
 }
 
-
 // Boolean version
-boolean Terminal::argDisplayOrSetBoolean(String argName, Terminal::CommandAndArguments comAndArg, boolean *var, String *message) {
+template <typename ProgramVars>
+boolean Terminal<ProgramVars>::argDisplayOrSetBoolean(String argName, Terminal<ProgramVars>::CommandAndArguments comAndArg, boolean *var, String *message) {
     if (comAndArg.argType == ARGUMENT_TYPE_NONE) {
     *message = argName + " is : '" + String(*var) + "'";
     return false;

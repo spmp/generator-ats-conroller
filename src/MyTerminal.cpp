@@ -1,18 +1,9 @@
-
-#include "Arduino.h"
 #include "MyTerminal.h"
-// #include "Terminal.h"
-// We need to include the 'cpp' due to the templating weirdness
-// #include "Terminal.cpp"
-#include "Process.h"
-#include "Timer.h"
 
 /**
  * Constructor
  */
-MyTerminal::MyTerminal(Stream & Serial, ProgramVars *programVars): _Serial (Serial) {
-  _progVars = programVars;
-}
+MyTerminal::MyTerminal(Stream & Serial, ProgramVars *programVars): Terminal(Serial, programVars) {}
 
 /**
  * Deconstructor
@@ -22,15 +13,7 @@ MyTerminal::~MyTerminal() {};
 /**
  * Process the UART commands, updating the variables or producing a string message
  */
-int MyTerminal::processCommands(String inputString, String *message) {
-  // Parse the 'inputString'
-  CommandAndArguments comArgState = parseCommandArgs(inputString);
-
-  // Exit with message if no command
-  if (comArgState.parseState == EXIT_FAILURE) {
-    *message = F("Input string is not a valid command/argument");
-    return EXIT_FAILURE;
-  }
+void MyTerminal::getAndSetProgramVars(CommandAndArguments comArgState, String *message) {
 
   // Let us process the commands
   switch (comArgState.command)
@@ -196,43 +179,7 @@ int MyTerminal::processCommands(String inputString, String *message) {
     *message = "No recognised command";
     break;
   }
-  return EXIT_SUCCESS;
 };
-
-
-void MyTerminal::handle_serial_input(void) {
-  // terminal.readSerialAndProcessCommands(&programVars);
-  // While there are characters in the Serial buffer
-  // read them in one at a time into sBuffer
-  // We need to go via char probably due to implicit type conversions
-  while(Serial.available() > 0){
-    char inChar = Serial.read();
-    serialBuffer += inChar;
-  }
-
-  // If the buffers end in newline, try to parse the command an arguments
-  if(serialBuffer.endsWith("\n")) {
-    // Print out the buffer - for fun
-    Serial.println(serialBuffer);
-    // Process the commands
-    processCommands(serialBuffer, &messages);
-    // Print the message
-    Serial.println(messages);
-    // Reset the buffer to empty
-    serialBuffer = "";
-  }
-
-}
-
-void MyTerminal::print_logs(void){
-   // print logging info if enabled
-  if (_progVars->loggingEnabled == true) {
-  // if (programVars.inputRunStop == true) {
-  // if (digitalRead(INPUT_PIN_RUN_STOP) == true) {
-    String logMessage = formatProgVars(timestamp);    
-    _Serial.println(logMessage);
-  }
-}
 
 String MyTerminal::formatProgVars(long time) {
   // Mode specific parts
@@ -302,7 +249,7 @@ String MyTerminal::formatProgVars(long time) {
       modeString = String(", m: ") + _progVars->generatorState + String(", t: 0/0");
       break;
   };
-  return String(timestamp) +
+  return String(time) +
     // // Generator state
       modeString +
       // retries

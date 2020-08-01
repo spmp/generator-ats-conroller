@@ -24,35 +24,35 @@ void timer_setup(void){
  * Call the registered callback functions at the fast, medium, and log times
  */
 void timer_run_timed_functions(void){
-    if ( fastTimeCallback && fastTimeFlag ) {
-        fastTimeFlag = false;
-        fastTimeCallback();
-    }
-    
-    if (mediumTimeCallback && mediumTimeFlag ) {
-        mediumTimeFlag = false;
-        mediumTimeCallback();
-    }
-    
-    if (longTimeCallback && longTimeFlag ) {
-        longTimeFlag = false;
-        longTimeCallback();
-    }
+  if ( fastTimeCallback && fastTimeFlag ) {
+    fastTimeFlag = false;
+    fastTimeCallback();
+  }
+  
+  if (mediumTimeCallback && mediumTimeFlag ) {
+    mediumTimeFlag = false;
+    mediumTimeCallback();
+  }
+  
+  if (longTimeCallback && longTimeFlag ) {
+    longTimeFlag = false;
+    longTimeCallback();
+  }
 }
 
 /**
  * Set the time based callback functions
  */
 void timer_set_fast_time_callback(void (* fast_callback)()) {
-    fastTimeCallback = fast_callback;
+  fastTimeCallback = fast_callback;
 }
 
 void timer_set_medium_time_callback(void (* medium_callback)()) {
-    mediumTimeCallback = medium_callback;
+  mediumTimeCallback = medium_callback;
 }
 
 void timer_set_long_time_callback(void (* long_callback)()) {
-    longTimeCallback = long_callback;
+  longTimeCallback = long_callback;
 }
 
 /** Repurposing/reusing timer0 for our own purposes
