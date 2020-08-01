@@ -31,7 +31,7 @@ class MyTerminal: public Terminal<ProgramVars> {
         ~MyTerminal(void);
 
     private:
-        int processCommands(String inputString, String *message);
+        void getAndSetProgramVars(CommandAndArguments comArgState, String *message);
         String formatProgVars(long time);
 };
 

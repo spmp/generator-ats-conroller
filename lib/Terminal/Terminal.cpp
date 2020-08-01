@@ -6,16 +6,7 @@
 /**
  * The following are examples of how the two abstract functions should be implemented
  */
-// int MyTerminal::processCommands(String inputString, String *message) {
-//   // Parse the 'inputString'
-//   CommandAndArguments comArgState = parseCommandArgs(inputString);
-
-//   // Exit with message if no command
-//   if (comArgState.parseState == EXIT_FAILURE) {
-//     *message = F("Input string is not a valid command/argument");
-//     return EXIT_FAILURE;
-//   }
-
+// getAndSetProgramVars(CommandAndArguments comArgState, String *message) {
 //   // Let us process the commands
 //   switch (comArgState.command)
 //   {
@@ -56,7 +47,6 @@
 //     *message = "No recognised command";
 //     break;
 //   }
-//   return EXIT_SUCCESS;
 // };
 
 // String MyTerminal::formatProgVars(long time) {
@@ -152,6 +142,25 @@ void Terminal<ProgramVars>::print_logs(void){
   }
 }
 
+/**
+ * Process the UART commands, updating the variables via or 'getAndSetProgramVars'
+ * producing a string message
+ */
+template <typename ProgramVars>
+int Terminal<ProgramVars>::processCommands(String inputString, String *message) {
+  // Parse the 'inputString'
+  CommandAndArguments comArgState = parseCommandArgs(inputString);
+
+  // Exit with message if no command
+  if (comArgState.parseState == EXIT_FAILURE) {
+    *message = F("Input string is not a valid command/argument");
+    return EXIT_FAILURE;
+  }
+
+  getAndSetProgramVars(comArgState, message);
+
+  return EXIT_SUCCESS;
+}
 
 /** This function takes a string and separates out the command and argument
  * The command is the first character, the argument is the remainder

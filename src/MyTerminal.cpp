@@ -1,11 +1,4 @@
-
-#include "Arduino.h"
 #include "MyTerminal.h"
-// #include "Terminal.h"
-// We need to include the 'cpp' due to the templating weirdness
-// #include "Terminal.cpp"
-#include "Process.h"
-#include "Timer.h"
 
 /**
  * Constructor
@@ -17,18 +10,11 @@ MyTerminal::MyTerminal(Stream & Serial, ProgramVars *programVars): Terminal(Seri
  */
 MyTerminal::~MyTerminal() {};
 
+
 /**
  * Process the UART commands, updating the variables or producing a string message
  */
-int MyTerminal::processCommands(String inputString, String *message) {
-  // Parse the 'inputString'
-  CommandAndArguments comArgState = parseCommandArgs(inputString);
-
-  // Exit with message if no command
-  if (comArgState.parseState == EXIT_FAILURE) {
-    *message = F("Input string is not a valid command/argument");
-    return EXIT_FAILURE;
-  }
+void MyTerminal::getAndSetProgramVars(CommandAndArguments comArgState, String *message) {
 
   // Let us process the commands
   switch (comArgState.command)
@@ -194,7 +180,6 @@ int MyTerminal::processCommands(String inputString, String *message) {
     *message = "No recognised command";
     break;
   }
-  return EXIT_SUCCESS;
 };
 
 

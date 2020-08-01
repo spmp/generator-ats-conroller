@@ -10,7 +10,7 @@
  *  bool loggingEnabled
  *  
  * The following functions must implemented:
- *  'processCommands' which process the String command and argument taken 
+ *  'formatProgVars' which gets and sets ProgramVars from command and argument taken 
  *   from the serial input. 
  * and
  *  'formatProgVars' which is intended to format the provided program specic
@@ -52,27 +52,6 @@ class Terminal {
         Stream & _Serial;
         ProgramVars * _progVars;
         
-        // Impliment these please
-        /**
-         * This function is intended to set or get program vars
-         * based on serial input
-         */
-        virtual int processCommands(String inputString, String *message) = 0;
-        
-        /**
-         * This function is intended to format the program vars
-         * for logging output
-         */
-        virtual String formatProgVars(long time) = 0;
-
-
-        // /** 
-        //  * The standard OP for getting/setting/displaying command and args
-        //  * This is the generic Integer type
-        //  **/
-        // template <typename Z>
-        // boolean argDisplayOrSetGenericInteger(String argName, CommandAndArguments comAndArg, Z *var, String *message);
-        
         /**
          * These functions are the boring ones
          */
@@ -86,6 +65,32 @@ class Terminal {
             boolean parseState;
         };
 
+        // Impliment these please in concrete class
+        /**
+         * The following function should get and set members of _progVars
+         * which is in the class scope
+         */
+        virtual void getAndSetProgramVars(CommandAndArguments comArgState, String *message) =0;
+        
+        /**
+         * This function is intended to format the program vars
+         * for logging output
+         */
+        virtual String formatProgVars(long time) = 0;
+
+        /**
+         * Process the serial string to separte the command and arguments
+         * This calls 'getAndSetProgramVars' to get and set ProgamVars
+         */
+        int processCommands(String inputString, String *message);
+
+        // /** 
+        //  * The standard OP for getting/setting/displaying command and args
+        //  * This is the generic Integer type
+        //  **/
+        // template <typename Z>
+        // boolean argDisplayOrSetGenericInteger(String argName, CommandAndArguments comAndArg, Z *var, String *message);
+        
         /** This function takes a string and separates out the command and argument
          * The command is the first character, the argument is the remainder
          * 
