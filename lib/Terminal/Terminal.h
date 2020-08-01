@@ -6,6 +6,7 @@
 #pragma once
 
 #include "Arduino.h"
+#include "Timer.h"
 
 // Argument type defines
 #define ARGUMENT_TYPE_NONE            0
@@ -13,10 +14,51 @@
 #define ARGUMENT_TYPE_DOUBLE          2
 #define ARGUMENT_TYPE_STRING          3
 
+template <typename ProgramVars>
 class Terminal {
     public:
-        Terminal();
+        Terminal(Stream & Serial, ProgramVars *programVars);
         ~Terminal();
+
+        /**
+         * The Actual public methds
+         * Handle serial handles serial, setting variables etc...
+         * print_logs prints the formatted prog vars
+         */
+        void handle_serial_input(void);
+        void print_logs(void);
+
+    protected:
+        String serialBuffer = "";
+        String messages = "";
+        String strSep = ",";
+        Stream & _Serial;
+        ProgramVars * _progVars;
+        
+        // Impliment these please
+        /**
+         * This function is intended to set or get program vars
+         * based on serial input
+         */
+        virtual int processCommands(String inputString, String *message) = 0;
+        
+        /**
+         * This function is intended to format the program vars
+         * for logging output
+         */
+        virtual String formatProgVars(long time) = 0;
+
+
+        // /** 
+        //  * The standard OP for getting/setting/displaying command and args
+        //  * This is the generic Integer type
+        //  **/
+        // template <typename Z>
+        // boolean argDisplayOrSetGenericInteger(String argName, CommandAndArguments comAndArg, Z *var, String *message);
+        
+        /**
+         * These functions are the boring ones
+         */
 
         // A 'struct' to hold parsed commands and arguments
         struct CommandAndArguments {
@@ -103,13 +145,6 @@ class Terminal {
 
         // Boolean version
         boolean argDisplayOrSetBoolean(String argName, CommandAndArguments comAndArg, boolean *var, String *message);
-    private:
-        /** 
-         * The standard OP for getting/setting/displaying command and args
-         * This is the generic Integer type
-         **/
-        template <typename Z>
-        boolean argDisplayOrSetGenericInteger(String argName, CommandAndArguments comAndArg, Z *var, String *message);
 
 };
 

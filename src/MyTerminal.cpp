@@ -10,9 +10,7 @@
 /**
  * Constructor
  */
-MyTerminal::MyTerminal(Stream & Serial, ProgramVars *programVars): _Serial (Serial) {
-  _progVars = programVars;
-}
+MyTerminal::MyTerminal(Stream & Serial, ProgramVars *programVars): Terminal(Serial, programVars) {}
 
 /**
  * Deconstructor
@@ -199,40 +197,6 @@ int MyTerminal::processCommands(String inputString, String *message) {
   return EXIT_SUCCESS;
 };
 
-
-void MyTerminal::handle_serial_input(void) {
-  // terminal.readSerialAndProcessCommands(&programVars);
-  // While there are characters in the Serial buffer
-  // read them in one at a time into sBuffer
-  // We need to go via char probably due to implicit type conversions
-  while(Serial.available() > 0){
-    char inChar = Serial.read();
-    serialBuffer += inChar;
-  }
-
-  // If the buffers end in newline, try to parse the command an arguments
-  if(serialBuffer.endsWith("\n")) {
-    // Print out the buffer - for fun
-    Serial.println(serialBuffer);
-    // Process the commands
-    processCommands(serialBuffer, &messages);
-    // Print the message
-    Serial.println(messages);
-    // Reset the buffer to empty
-    serialBuffer = "";
-  }
-
-}
-
-void MyTerminal::print_logs(void){
-   // print logging info if enabled
-  if (_progVars->loggingEnabled == true) {
-  // if (programVars.inputRunStop == true) {
-  // if (digitalRead(INPUT_PIN_RUN_STOP) == true) {
-    String logMessage = formatProgVars(timestamp);    
-    _Serial.println(logMessage);
-  }
-}
 
 String MyTerminal::formatProgVars(long time) {
   // Mode specific parts
