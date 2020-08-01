@@ -1,5 +1,22 @@
 /** 
  * This is an abstract class for terminal interaction in Arduino
+ * 
+ * This class is abstract and generic due to each project having its
+ * own program data structure requirements.
+ * As such it needs to be extended/inherited by a concrete class.
+ * 
+ * The assumption is that the generic type 'ProgramVars' is a struct
+ * with at least the following members:
+ *  bool loggingEnabled
+ *  
+ * The following functions must implemented:
+ *  'processCommands' which process the String command and argument taken 
+ *   from the serial input. 
+ * and
+ *  'formatProgVars' which is intended to format the provided program specic
+ * struct to produce the loggable output.
+ * 
+ * See 'Terminal.cpp' for examples.
  */
 #ifndef _ARDUINO_TERMINAL
 #define _ARDUINO_TERMINAL

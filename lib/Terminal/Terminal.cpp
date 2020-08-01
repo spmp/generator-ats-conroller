@@ -3,6 +3,102 @@
  */
 #include "Terminal.h"
 
+/**
+ * The following are examples of how the two abstract functions should be implemented
+ */
+// int MyTerminal::processCommands(String inputString, String *message) {
+//   // Parse the 'inputString'
+//   CommandAndArguments comArgState = parseCommandArgs(inputString);
+
+//   // Exit with message if no command
+//   if (comArgState.parseState == EXIT_FAILURE) {
+//     *message = F("Input string is not a valid command/argument");
+//     return EXIT_FAILURE;
+//   }
+
+//   // Let us process the commands
+//   switch (comArgState.command)
+//   {
+//   case 'h':
+//     _progVars->stateChange = false;
+//     *message = String("Help: Help message, ,careful of Strings, they suck");
+//     break;
+//   case 'L':
+//     _progVars->stateChange = argDisplayOrSetBoolean("loggingEnabled", comArgState, &_progVars->loggingEnabled, message);
+//     break;
+//   // Process control stages
+//   case 'P':
+//     _progVars->stateChange = argDisplayOrSetBoolean("processControlEnabled", comArgState, &_progVars->processControlEnabled, message);
+//     break;
+//   case 'I':
+//     _progVars->stateChange = argDisplayOrSetBoolean("readInputsEnabled", comArgState, &_progVars->readInputsEnabled, message);
+//     break;
+//   case 'Y':
+//     _progVars->stateChange = argDisplayOrSetBoolean("calculateStateEnabled", comArgState, &_progVars->calculateStateEnabled, message);
+//     break;
+//   case 'U':
+//     _progVars->stateChange = argDisplayOrSetBoolean("checkLimitsEnabled", comArgState, &_progVars->checkLimitsEnabled, message);
+//     break;
+//   case 'O':
+//     _progVars->stateChange = argDisplayOrSetBoolean("setOutputsEnabled", comArgState, &_progVars->setOutputsEnabled, message);
+//     break;
+//   case 'r':
+//     _progVars->stateChange = argDisplayOrSetUint16("generatorState", comArgState, &_progVars->generatorState, message);
+//     break;
+//   case 'S':
+//     _progVars->stateChange = argDisplayOrSetUint8("maxRetries", comArgState, &_progVars->maxRetries, message);
+//     break;
+//   case 'T':
+//     _progVars->stateChange = argDisplayOrSetFloatFromLong("checkLevelTemperatureMax", comArgState, &_progVars->checkLevelTemperatureMax, 100, message);
+//     break;
+//   default:
+//     _progVars->stateChange = false;
+//     *message = "No recognised command";
+//     break;
+//   }
+//   return EXIT_SUCCESS;
+// };
+
+// String MyTerminal::formatProgVars(long time) {
+//   return String(time) +
+//       String(", R: ") +
+//       String(_progVars->numRetries) +
+//       String("/") +
+//       String(_progVars->maxRetries) +
+//       String(F(", P: ")) +
+//       String(_progVars->processControlEnabled) +
+//       String(strSep) +
+//       String(_progVars->readInputsEnabled) +
+//       String(strSep) +
+//       String(_progVars->calculateStateEnabled) +
+//       String(strSep) +
+//       String(_progVars->checkLimitsEnabled) +
+//       String(strSep) +
+//       String(_progVars->setOutputsEnabled) +
+//       String(F(", WE: ")) +
+//       String(_progVars->generatorWarning) +
+//       String(strSep) +
+//       String(_progVars->generatorError) +
+//   // Inputs
+//       String(F(", I: ")) +
+//       String(_progVars->inputRunStop) +
+//       String(strSep) +
+//       String(_progVars->inpputRunIndicator) +
+//   // Outputs
+//       String(F(", O: ")) +
+//       String(_progVars->outputGeneratorIgnition) +
+//       String(strSep) +
+//       String(_progVars->outputGeneratorStarterContactor) +
+//       String(strSep) +
+//       String(_progVars->outputGeneratorOutputEnable) +
+//       String(strSep) +
+//       String(_progVars->outputIndicatorError) ;
+// };
+
+
+
+
+
 
 /**
  * Constructor

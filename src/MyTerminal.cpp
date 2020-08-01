@@ -266,7 +266,7 @@ String MyTerminal::formatProgVars(long time) {
       modeString = String(", m: ") + _progVars->generatorState + String(", t: 0/0");
       break;
   };
-  return String(timestamp) +
+  return String(time) +
     // // Generator state
       modeString +
       // retries
