@@ -123,20 +123,53 @@ class Process {
   private:
     ProgramVars _programVars;
 
-    /**
+    /**************************************************************************
      * The process control stages
-     */
-    void read_inputs(ProgramVars *progVars, uint16_t periodTimeMillis);
-    void calculate_state(ProgramVars *progVars, uint16_t periodTimeMillis);
-    void check_limits(ProgramVars *progVars, uint16_t periodTimeMillis);
-    void set_outputs(ProgramVars *progVars, uint16_t periodTimeMillis);
+     *************************************************************************/
 
     /**
+     * Read the uC inputs
+     */
+    void read_inputs(ProgramVars *progVars, uint16_t periodTimeMillis);
+
+    /**
+     * Calculate the new program states based on inputs etc.
+     */
+    void calculate_state(ProgramVars *progVars, uint16_t periodTimeMillis);
+
+    /**
+     * Check for limit conditions, and handle warnings and errors
+     */
+    void check_limits(ProgramVars *progVars, uint16_t periodTimeMillis);
+
+    /**
+     * Set the uC outputs
+     */
+    void set_outputs(ProgramVars *progVars, uint16_t periodTimeMillis);
+
+    /**************************************************************************
      * Helper functions
+     *************************************************************************/
+
+    /**
+     * Read the 'run/stop' input
      */
     bool read_run_stop(uint8_t digitalInputPin, uint16_t debounceNum);
+
+    /**
+     * Read the 'generator running' input
+     */
     bool read_generator_running(uint8_t digitalInputPin, uint16_t debounceNum);
+
+    /**
+     * Convert seconds to ticks (or program loop cycles) based on current 
+     * ticks per cycle
+     */
     uint16_t secondsToTicks(uint16_t seconds, uint16_t ticksPerCycle);
+
+    /**
+     * Calculate an output state to flash it asymetrically
+     */
     bool flash_error_light(bool indicatorState, uint8_t onTicks, uint8_t offTicks);
 };
 

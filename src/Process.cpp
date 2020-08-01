@@ -20,64 +20,33 @@ void Process::begin(void) {
   pinMode(OUTPUT_PIN_INDICATOR_FUEL, OUTPUT);
 }
 
-bool Process::read_run_stop(uint8_t digitalInputPin, uint16_t debounceNum) {
-  static int16_t debounceCount = 0;
-  static bool pinState = false;
-  static bool returnState = false;
-
-  // Pin is inverting, so we invert at read
-  pinState = ! digitalRead(digitalInputPin);
-  
-  //We debounce checking the debounceCount against the debounceNum,
-  // If we are at +debounce number we return true, and if at -debounceNum 
-  // then return false, otherwise add for true or subtract if false from
-  // debounce count.
-  // But.. if we _were_ true and the debounce count falls we cannot
-  // transition to false unless the count is at one rail or the other
-  if(pinState == true) {
-    if(debounceCount >= int16_t(debounceNum)) {
-      returnState = true;
-    } else {
-      debounceCount++;
+/**
+ * Run the complete process control loop
+ * Ideally this should be registered to a timer
+ * on a 'medium' or 'fast' time interval
+ */
+void Process::process(ProgramVars *progVars, uint16_t periodTimeMillis) {
+  if(progVars->processControlEnabled == true) {
+    // Read inputs
+    if (progVars->readInputsEnabled) {
+      read_inputs(progVars, periodTimeMillis);
     }
-  } else {
-    if(debounceCount <= int16_t(-debounceCount)) {
-      returnState = false;
-    } else {
-      debounceCount--;
+
+    // Calculate state
+    if (progVars->calculateStateEnabled) {
+      calculate_state(progVars, periodTimeMillis);
     }
-  }
-  return returnState;
-};
 
-
-bool Process::read_generator_running(uint8_t digitalInputPin, uint16_t debounceNum) {
-  static int16_t debounceCount = 0;
-  static bool pinState = false;
-  static bool returnState = false;
-
-  // Pin is inverting, so we invert at read
-  pinState = ! digitalRead(digitalInputPin);
-
-  if(pinState == true) {
-    if(debounceCount >= int16_t(debounceNum)) {
-      returnState = true;
-    } else {
-      debounceCount++;
+    // Check Limits
+    if (progVars->checkLimitsEnabled) {
+      check_limits(progVars, periodTimeMillis);
     }
-  } else {
-    if(debounceCount <= int16_t(-debounceCount)) {
-      returnState = false;
-    } else {
-      debounceCount--;
+
+    // Set outputs
+    if (progVars->setOutputsEnabled) {
+      set_outputs(progVars, periodTimeMillis);
     }
   }
-  return returnState;
-};
-
-
-uint16_t Process::secondsToTicks(uint16_t seconds, uint16_t ticksPerCycle) {
-  return seconds*(1000.0/ticksPerCycle);
 }
 
 /**
@@ -96,23 +65,12 @@ void Process::read_inputs(ProgramVars *progVars, uint16_t periodTimeMillis) {
 }
 
 /**
- * Calculate the state - i.e start, stop, and manage the generator
+ * Calculate the new program states based on inputs etc.
  */
 void Process::calculate_state(ProgramVars *progVars, uint16_t periodTimeMillis) {
-  // programVars.outputGeneratorStarterContactor = programVars.inputRunStop;
-  // programVars.outputGeneratorOutputEnable = programVars.inpputRunIndicator;
 
-  /**
-   * Generator starting and stopping logic.
-   * Probably need a few functions in here...
-   */
-  // Lets determine if there is a state change and which one
-  // We need to debounce this input somehow. Maybe count up debounce max-> starting and down to 0-> stopping
-  // Serial.print("calculating state. ");
   if(progVars->inputRunStop == true){
-    // Serial.print("runStop true, ");
     if(progVars->generatorState == GENERATOR_STATE_ON) {
-      // Serial.print("generator ON, ");
       // Check whether we are still in a 'running' state.
       // If not, move to retry
       if(progVars->inpputRunIndicator == false) {
@@ -120,10 +78,8 @@ void Process::calculate_state(ProgramVars *progVars, uint16_t periodTimeMillis) 
         progVars->generatorState = GENERATOR_STATE_RETRY_WAIT;
       }
     } else if(progVars->generatorState == GENERATOR_STATE_RUNNING) {
-      // Serial.print("Generator Running, ");
       // We need to move from Running to On, which means waiting the
       // required number of seconds
-      // TODO: Can we set the X_TIME_MILLIS context so this is not hard coded to MEDIUM?
       if(progVars->startToOnTimeCurrentTicks >= secondsToTicks(progVars->startToOnTimeSeconds, periodTimeMillis)){
         // Sweet, the generator has been on long enough, can set the state to ON
         progVars->startToOnTimeCurrentTicks = 0;
@@ -172,7 +128,6 @@ void Process::calculate_state(ProgramVars *progVars, uint16_t periodTimeMillis) 
     } else if(
       progVars->generatorState == GENERATOR_STATE_STOPPING ||
       progVars->generatorState == GENERATOR_STATE_OFF) {
-        // Serial.print("setting to Starting, ");
         progVars->startSwitchDebounceCurrentTicks = 0;
         progVars->starterContactorTimeCurrentTicks = 0;
         progVars->startToOnTimeCurrentTicks = 0;
@@ -248,7 +203,98 @@ void Process::calculate_state(ProgramVars *progVars, uint16_t periodTimeMillis) 
 }
 
 /**
- * Flash a light with a given on ticks and off time (ticks)
+ * Check for limit conditions, and handle warnings and errors
+ */
+void Process::check_limits(ProgramVars *progVars, uint16_t periodTimeMillis) {
+  // Simply raise the error output for now.
+  // You must reset to break out of error
+  if(
+      progVars->generatorState == GENERATOR_STATE_START_ERROR || 
+      progVars->generatorState == GENERATOR_STATE_STOP_ERROR) {
+    progVars->outputIndicatorError = flash_error_light(progVars->outputIndicatorError, 7, 3);
+  }
+}
+
+/**
+ * Set the uC outputs
+ */
+void Process::set_outputs(ProgramVars *progVars, uint16_t periodTimeMillis) {
+  digitalWrite(OUTPUT_PIN_GENERATOR_IGNITION, progVars->outputGeneratorIgnition);
+  digitalWrite(OUTPUT_PIN_GENERATOR_STARTER_CONTACTOR, progVars->outputGeneratorStarterContactor);
+  digitalWrite(OUTPUT_PIN_GENERATOR_OUTPUT_ENABLED, progVars->outputGeneratorOutputEnable);
+  digitalWrite(OUTPUT_PIN_INDICATOR_ERROR, progVars->outputIndicatorError);
+}
+
+/**
+ * Read the 'run/stop' input
+ */
+bool Process::read_run_stop(uint8_t digitalInputPin, uint16_t debounceNum) {
+  static int16_t debounceCount = 0;
+  static bool pinState = false;
+  static bool returnState = false;
+
+  // Pin is inverting, so we invert at read
+  pinState = ! digitalRead(digitalInputPin);
+  
+  //We debounce checking the debounceCount against the debounceNum,
+  // If we are at +debounce number we return true, and if at -debounceNum 
+  // then return false, otherwise add for true or subtract if false from
+  // debounce count.
+  // But.. if we _were_ true and the debounce count falls we cannot
+  // transition to false unless the count is at one rail or the other
+  if(pinState == true) {
+    if(debounceCount >= int16_t(debounceNum)) {
+      returnState = true;
+    } else {
+      debounceCount++;
+    }
+  } else {
+    if(debounceCount <= int16_t(-debounceCount)) {
+      returnState = false;
+    } else {
+      debounceCount--;
+    }
+  }
+  return returnState;
+};
+
+/**
+ * Read the 'generator running' input
+ */
+bool Process::read_generator_running(uint8_t digitalInputPin, uint16_t debounceNum) {
+  static int16_t debounceCount = 0;
+  static bool pinState = false;
+  static bool returnState = false;
+
+  // Pin is inverting, so we invert at read
+  pinState = ! digitalRead(digitalInputPin);
+
+  if(pinState == true) {
+    if(debounceCount >= int16_t(debounceNum)) {
+      returnState = true;
+    } else {
+      debounceCount++;
+    }
+  } else {
+    if(debounceCount <= int16_t(-debounceCount)) {
+      returnState = false;
+    } else {
+      debounceCount--;
+    }
+  }
+  return returnState;
+};
+
+/**
+ * Convert seconds to ticks (or program loop cycles) based on current 
+ * ticks per cycle
+ */
+uint16_t Process::secondsToTicks(uint16_t seconds, uint16_t ticksPerCycle) {
+  return seconds*(1000.0/ticksPerCycle);
+}
+
+/**
+ * Calculate an output state to flash it asymetrically
  */
 bool Process::flash_error_light(bool indicatorState, uint8_t onTicks, uint8_t offTicks) {
   static uint8_t onTicksCount = 0;
@@ -268,52 +314,4 @@ bool Process::flash_error_light(bool indicatorState, uint8_t onTicks, uint8_t of
   }
 
   return returnState;
-}
-
-/**
- * This process function is to check the limit conditions and shut
- * down or raise warnings if limits breached or are close
- * 
- * Right now all this does is flash an error light if the
- * calculate_state function thinks there is an error
- */
-void Process::check_limits(ProgramVars *progVars, uint16_t periodTimeMillis) {
-  // Simply raise the error output for now.
-  // You must reset to break out of error
-  if(
-      progVars->generatorState == GENERATOR_STATE_START_ERROR || 
-      progVars->generatorState == GENERATOR_STATE_STOP_ERROR) {
-    progVars->outputIndicatorError = flash_error_light(progVars->outputIndicatorError, 7, 3);
-  }
-}
-
-void Process::set_outputs(ProgramVars *progVars, uint16_t periodTimeMillis) {
-  digitalWrite(OUTPUT_PIN_GENERATOR_IGNITION, progVars->outputGeneratorIgnition);
-  digitalWrite(OUTPUT_PIN_GENERATOR_STARTER_CONTACTOR, progVars->outputGeneratorStarterContactor);
-  digitalWrite(OUTPUT_PIN_GENERATOR_OUTPUT_ENABLED, progVars->outputGeneratorOutputEnable);
-  digitalWrite(OUTPUT_PIN_INDICATOR_ERROR, progVars->outputIndicatorError);
-}
-
-void Process::process(ProgramVars *progVars, uint16_t periodTimeMillis) {
-  if(progVars->processControlEnabled == true) {
-    // Read inputs
-    if (progVars->readInputsEnabled) {
-      read_inputs(progVars, periodTimeMillis);
-    }
-
-    // Calculate state
-    if (progVars->calculateStateEnabled) {
-      calculate_state(progVars, periodTimeMillis);
-    }
-
-    // Check Limits
-    if (progVars->checkLimitsEnabled) {
-      check_limits(progVars, periodTimeMillis);
-    }
-
-    // Set outputs
-    if (progVars->setOutputsEnabled) {
-      set_outputs(progVars, periodTimeMillis);
-    }
-  }
 }
