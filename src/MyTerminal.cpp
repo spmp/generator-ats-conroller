@@ -10,7 +10,6 @@ MyTerminal::MyTerminal(Stream & Serial, ProgramVars *programVars): Terminal(Seri
  */
 MyTerminal::~MyTerminal() {};
 
-
 /**
  * Process the UART commands, updating the variables or producing a string message
  */
@@ -181,7 +180,6 @@ void MyTerminal::getAndSetProgramVars(CommandAndArguments comArgState, String *m
     break;
   }
 };
-
 
 String MyTerminal::formatProgVars(long time) {
   // Mode specific parts

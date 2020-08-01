@@ -8,9 +8,9 @@
 #pragma once
 
 #include "Arduino.h"
+#include "Process.h"
 #include "Terminal.h"
 #include "Terminal.cpp"
-#include "Process.h"
 
 /*************************************************
  * Serial Console
@@ -26,13 +26,13 @@
 #define ARGUMENT_TYPE_STRING          3
 
 class MyTerminal: public Terminal<ProgramVars> {
-    public:
-        MyTerminal(Stream & Serial, ProgramVars *programVars);
-        ~MyTerminal(void);
+  public:
+    MyTerminal(Stream & Serial, ProgramVars *programVars);
+    ~MyTerminal(void);
 
-    private:
-        void getAndSetProgramVars(CommandAndArguments comArgState, String *message);
-        String formatProgVars(long time);
+  private:
+    void getAndSetProgramVars(CommandAndArguments comArgState, String *message);
+    String formatProgVars(long time);
 };
 
 #endif

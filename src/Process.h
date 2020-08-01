@@ -104,40 +104,40 @@ struct ProgramVars {
 
 
 class Process {
-    public:
-        // Process(ProgramVars *progVars);
-        Process() {};
-        ~Process(void) {};
+  public:
+    // Process(ProgramVars *progVars);
+    Process() {};
+    ~Process(void) {};
 
-        /**
-         * Setup the hardware, inputs and outputs
-         */
-        void begin(void);
+    /**
+     * Setup the hardware, inputs and outputs
+     */
+    void begin(void);
 
-        /**
-         * Run the complete process control loop
-         * Ideally this should be registered to a timer
-         * on a 'medium' or 'fast' time interval
-         */
-        void process(ProgramVars *progVars, uint16_t periodTimeMillis);
-    private:
-        ProgramVars _programVars;
+    /**
+     * Run the complete process control loop
+     * Ideally this should be registered to a timer
+     * on a 'medium' or 'fast' time interval
+     */
+    void process(ProgramVars *progVars, uint16_t periodTimeMillis);
+  private:
+    ProgramVars _programVars;
 
-        /**
-         * The process control stages
-         */
-        void read_inputs(ProgramVars *progVars, uint16_t periodTimeMillis);
-        void calculate_state(ProgramVars *progVars, uint16_t periodTimeMillis);
-        void check_limits(ProgramVars *progVars, uint16_t periodTimeMillis);
-        void set_outputs(ProgramVars *progVars, uint16_t periodTimeMillis);
+    /**
+     * The process control stages
+     */
+    void read_inputs(ProgramVars *progVars, uint16_t periodTimeMillis);
+    void calculate_state(ProgramVars *progVars, uint16_t periodTimeMillis);
+    void check_limits(ProgramVars *progVars, uint16_t periodTimeMillis);
+    void set_outputs(ProgramVars *progVars, uint16_t periodTimeMillis);
 
-        /**
-         * Helper functions
-         */
-        bool read_run_stop(uint8_t digitalInputPin, uint16_t debounceNum);
-        bool read_generator_running(uint8_t digitalInputPin, uint16_t debounceNum);
-        uint16_t secondsToTicks(uint16_t seconds, uint16_t ticksPerCycle);
-        bool flash_error_light(bool indicatorState, uint8_t onTicks, uint8_t offTicks);
+    /**
+     * Helper functions
+     */
+    bool read_run_stop(uint8_t digitalInputPin, uint16_t debounceNum);
+    bool read_generator_running(uint8_t digitalInputPin, uint16_t debounceNum);
+    uint16_t secondsToTicks(uint16_t seconds, uint16_t ticksPerCycle);
+    bool flash_error_light(bool indicatorState, uint8_t onTicks, uint8_t offTicks);
 };
 
 #endif

@@ -29,7 +29,6 @@ void timer_setup(void);
  */
 void timer_run_timed_functions(void);
 
-
 /**
  * @brief Set the name of the function that gets called on the fast interval. N.B. is called within an interrupt
  * @param  fast_Callback, the address of the function to run on the fast interval. i.e. &blahfunction

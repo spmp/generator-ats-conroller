@@ -80,7 +80,6 @@ uint16_t Process::secondsToTicks(uint16_t seconds, uint16_t ticksPerCycle) {
   return seconds*(1000.0/ticksPerCycle);
 }
 
-
 /**
  * Read inputs and process such that the 'input' parameters are
  * ready for use by the application. i.e witches are debounced,
@@ -95,7 +94,6 @@ void Process::read_inputs(ProgramVars *progVars, uint16_t periodTimeMillis) {
     progVars->inputTemperature = analogRead(INPUT_PIN_ANALOG_TEMPERATURE);
     progVars->inputFuelLevel = analogRead(INPUT_PIN_ANALOG_FUEL_LEVEL);
 }
-
 
 /**
  * Calculate the state - i.e start, stop, and manage the generator
@@ -249,7 +247,6 @@ void Process::calculate_state(ProgramVars *progVars, uint16_t periodTimeMillis) 
   }
 }
 
-
 /**
  * Flash a light with a given on ticks and off time (ticks)
  */
@@ -272,7 +269,6 @@ bool Process::flash_error_light(bool indicatorState, uint8_t onTicks, uint8_t of
 
   return returnState;
 }
-
 
 /**
  * This process function is to check the limit conditions and shut
@@ -297,7 +293,6 @@ void Process::set_outputs(ProgramVars *progVars, uint16_t periodTimeMillis) {
   digitalWrite(OUTPUT_PIN_GENERATOR_OUTPUT_ENABLED, progVars->outputGeneratorOutputEnable);
   digitalWrite(OUTPUT_PIN_INDICATOR_ERROR, progVars->outputIndicatorError);
 }
-
 
 void Process::process(ProgramVars *progVars, uint16_t periodTimeMillis) {
   if(progVars->processControlEnabled == true) {
