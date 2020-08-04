@@ -113,7 +113,6 @@ void run_terminal_toggle_led(){
 
   // Toggle the LED
   process.flash_led(&programVars, LONG_TIME_MILLIS);
-  // digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 }
 
 
