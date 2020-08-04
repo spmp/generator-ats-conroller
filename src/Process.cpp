@@ -18,6 +18,8 @@ void Process::begin(void) {
   pinMode(OUTPUT_PIN_INDICATOR_ERROR, OUTPUT);
   pinMode(OUTPUT_PIN_INDICATOR_TEMPERATURE, OUTPUT);
   pinMode(OUTPUT_PIN_INDICATOR_FUEL, OUTPUT);
+  // Setup the LED to output
+  pinMode(LED_BUILTIN, OUTPUT);
 }
 
 /**

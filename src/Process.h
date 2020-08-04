@@ -8,6 +8,8 @@
 #pragma once
 
 #include "Arduino.h"
+#include "ProcessBase.h"
+#include "ProcessBase.cpp"
 
 
 /** Default variable settings **/
@@ -103,7 +105,7 @@ struct ProgramVars {
 };
 
 
-class Process {
+class Process: public ProcessBase<ProgramVars> {
   public:
     // Process(ProgramVars *progVars);
     Process() {};
@@ -121,7 +123,6 @@ class Process {
      */
     void process(ProgramVars *progVars, uint16_t periodTimeMillis);
   private:
-    ProgramVars _programVars;
 
     /**************************************************************************
      * The process control stages

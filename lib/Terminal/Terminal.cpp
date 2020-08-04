@@ -92,6 +92,13 @@ template <typename ProgramVars>
 Terminal<ProgramVars>::Terminal(Stream & Serial, ProgramVars *programVars): _Serial (Serial) {
   _progVars = programVars;
 }
+// Overloaded constructor for second serial, i.e BT serial
+template <typename ProgramVars>
+Terminal<ProgramVars>::Terminal(Stream & Serial, Stream & SerialBT, ProgramVars *programVars): _Serial (Serial), _SerialBT (SerialBT) {
+  serialBtAvailable = true;
+  _progVars = programVars;
+  
+}
 
 /**
  * Deconstructor
@@ -101,27 +108,43 @@ Terminal<ProgramVars>::~Terminal() {}
 
 template <typename ProgramVars>
 void Terminal<ProgramVars>::handle_serial_input(void) {
-  // terminal.readSerialAndProcessCommands(&programVars);
   // While there are characters in the Serial buffer
   // read them in one at a time into sBuffer
   // We need to go via char probably due to implicit type conversions
-  while(Serial.available() > 0){
-    char inChar = Serial.read();
+  while(_Serial.available() > 0){
+    char inChar = _Serial.read();
     serialBuffer += inChar;
   }
 
   // If the buffers end in newline, try to parse the command an arguments
   if(serialBuffer.endsWith("\n")) {
     // Print out the buffer - for fun
-    Serial.println(serialBuffer);
+    // _Serial.println(serialBuffer);
     // Process the commands
     processCommands(serialBuffer, &messages);
     // Print the message
-    Serial.println(messages);
+    _Serial.println(messages);
     // Reset the buffer to empty
     serialBuffer = "";
   }
+  if(serialBtAvailable) {
+    while(_SerialBT.available() > 0){
+        char inChar = _SerialBT.read();
+        serialBuffer += inChar;
+    }
 
+    // If the buffers end in newline, try to parse the command an arguments
+    if(serialBuffer.endsWith("\n")) {
+        // Print out the buffer - for fun
+        // _SerialBT.println(serialBuffer);
+        // Process the commands
+        processCommands(serialBuffer, &messages);
+        // Print the message
+        _SerialBT.println(messages);
+        // Reset the buffer to empty
+        serialBuffer = "";
+    }
+  }
 }
 
 template <typename ProgramVars>
@@ -132,6 +155,9 @@ void Terminal<ProgramVars>::print_logs(void){
   // if (digitalRead(INPUT_PIN_RUN_STOP) == true) {
     String logMessage = formatProgVars(timestamp);    
     _Serial.println(logMessage);
+    if(serialBtAvailable) {
+        _SerialBT.println(logMessage);
+    }
   }
 }
 

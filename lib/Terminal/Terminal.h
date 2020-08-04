@@ -35,6 +35,7 @@ template <typename ProgramVars>
 class Terminal {
   public:
     Terminal(Stream & Serial, ProgramVars *programVars);
+    Terminal(Stream & Serial, Stream & SerialBT, ProgramVars *programVars);
     ~Terminal();
 
     /**
@@ -46,10 +47,12 @@ class Terminal {
     void print_logs(void);
 
   protected:
+    bool serialBtAvailable = false;
     String serialBuffer = "";
     String messages = "";
     String strSep = ",";
     Stream & _Serial;
+    Stream & _SerialBT;
     ProgramVars * _progVars;
     
     /**

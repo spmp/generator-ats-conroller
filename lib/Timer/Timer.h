@@ -1,8 +1,8 @@
 /** 
  * This is a timer
  */
-#ifndef _ARDUINO_TIMER
-#define _ARDUINO_TIMER
+#ifndef _ARDUINO_TIMER_H
+#define _ARDUINO_TIMER_H
 #pragma once
 
 #include "Arduino.h"
@@ -17,6 +17,7 @@ volatile extern uint32_t timestamp;
 volatile extern bool fastTimeFlag;
 volatile extern bool mediumTimeFlag;
 volatile extern bool longTimeFlag;
+
 
 /**
  * Setup function to be run in setup(){...}

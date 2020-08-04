@@ -112,7 +112,8 @@ void run_terminal_toggle_led(){
   terminal.print_logs();
 
   // Toggle the LED
-  digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+  process.flash_led(&programVars, LONG_TIME_MILLIS);
+  // digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 }
 
 
